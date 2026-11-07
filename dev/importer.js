@@ -191,7 +191,7 @@ var Importer = (function () {
     var root = doc.querySelector('main, [role="main"], #main, #content, .site-content') || doc.body, found = [];
     var groups = cardGroups(root, base);
     var gseen = {};
-    var kept = []; groups = groups.filter(function (g) { var ls = g.items.map(function (i) { return i.link || i.title; }); var dup = kept.some(function (k) { return ls.filter(function (l) { return k.indexOf(l) >= 0; }).length >= ls.length * .5; }); if (!dup) kept.push(ls); return !dup; });
+    var kept = []; groups = groups.filter(function (g) { var ls = g.items.map(function (i) { return (i.link || '') + '|' + i.title; }); var dup = kept.some(function (k) { return ls.filter(function (l) { return k.indexOf(l) >= 0; }).length >= ls.length * .5; }); if (!dup) kept.push(ls); return !dup; });
     groups.forEach(function (g) { found.push({ el: g.el, s: groupSection(g) }); });
     // embedded videos and podcasts
     var vframes = A(root.querySelectorAll('iframe[src*="youtube"], iframe[data-src*="youtube"], iframe[src*="vimeo"], video')).filter(function (f) { return !groups.some(function (g) { return g.el.contains(f); }); });
