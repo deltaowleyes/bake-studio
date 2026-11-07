@@ -27,11 +27,16 @@ var Importer = (function () {
     if (!c || JUNK.test(c) || JUNK.test(img.className)) return '';
     return /^data:/.test(c) ? c : abs(c, base);
   }
-  function bgUrl(el, base) { var m = /background(?:-image)?\s*:[^;]*url\(\s*["']?([^"')]+)["']?\s*\)/i.exec(el.getAttribute && el.getAttribute('style') || ''); return m && !JUNK.test(m[1]) ? abs(m[1], base) : ''; }
+  function bgUrl(el, base) {
+    if (!el.getAttribute) return '';
+    var lazy = el.getAttribute('data-bg') || el.getAttribute('data-background') || el.getAttribute('data-bg-src') || el.getAttribute('data-background-image') || '';
+    var m = /url\(\s*["']?([^"')]+)["']?\s*\)/i.exec(lazy) || (/^(https?:|\/)[^\s]+\.(jpe?g|png|webp|avif)/i.test(lazy) ? [0, lazy] : null) || /background(?:-image)?\s*:[^;]*url\(\s*["']?([^"')]+)["']?\s*\)/i.exec(el.getAttribute('style') || '');
+    return m && !JUNK.test(m[1]) ? abs(m[1], base) : '';
+  }
   function bestImg(el, base) {
     var imgs = el.tagName == 'IMG' ? [el] : A(el.querySelectorAll('img'));
     for (var i = 0; i < imgs.length; i++) { var s = imgSrc(imgs[i], base); if (s) return { kind: 'img', src: s, label: imgs[i].getAttribute('alt') || '' }; }
-    var bgs = [el].concat(A(el.querySelectorAll('[style*="url("]')));
+    var bgs = [el].concat(A(el.querySelectorAll('[style*="url("], [data-bg], [data-background], [data-bg-src], [data-background-image]')));
     for (i = 0; i < bgs.length; i++) { var b = bgUrl(bgs[i], base); if (b) return { kind: 'img', src: b, label: '' }; }
     var yt = el.querySelector('iframe[src*="youtube"], iframe[data-src*="youtube"]'); if (yt) { var m = /embed\/([\w-]{6,})/.exec(yt.getAttribute('src') || yt.getAttribute('data-src')); if (m) return { kind: 'img', src: 'https://i.ytimg.com/vi/' + m[1] + '/hqdefault.jpg', label: 'Video thumbnail' }; }
     var v = el.querySelector('video[poster]'); if (v) return { kind: 'img', src: abs(v.getAttribute('poster'), base), label: 'Video poster' };
@@ -51,7 +56,7 @@ var Importer = (function () {
       var logoish = /logo|brand|wordmark/.test(hint) || !!img.closest('header, [class*="logo"], [class*="brand"], [id*="logo"], .site-title, .navbar-brand');
       add(s, img.getAttribute('alt'), logoish);
     });
-    A(doc.querySelectorAll('[style*="url("]')).forEach(function (el) { add(bgUrl(el, base), 'Background image'); });
+    A(doc.querySelectorAll('[style*="url("], [data-bg], [data-background], [data-bg-src], [data-background-image]')).forEach(function (el) { add(bgUrl(el, base), 'Background image'); });
     var re = /url\(\s*["']?([^"')]+\.(?:png|jpe?g|webp|avif|svg))["']?\s*\)/gi, m; while ((m = re.exec(css))) add(abs(m[1], base), 'Image from your styles', /logo/i.test(m[1]));
     var og = doc.querySelector('meta[property="og:image"]'); if (og) add(abs(og.getAttribute('content'), base), 'Share image');
     var ld = doc.querySelector('script[type="application/ld+json"]'); if (ld) { var lm = /"logo"\s*:\s*(?:\{[^}]*"url"\s*:\s*)?"([^"]+)"/.exec(ld.textContent); if (lm) add(abs(lm[1], base), 'Logo', true); }
@@ -145,12 +150,15 @@ var Importer = (function () {
     raw.forEach(function (g) {
       var inner = raw.filter(function (o) { return o !== g && g.items.some(function (it) { return it.contains(o.c) || it === o.c; }); });
       if (inner.length && inner.length >= g.items.length * .5) {
-        var items = []; inner.forEach(function (o) { items = items.concat(o.items); });
-        inner.forEach(function (o) { o.merged = true; });
-        keep.push({ c: g.c, items: items, sig: inner[0].sig });
+        var bySig = {}; inner.forEach(function (o) { (bySig[o.sig] = bySig[o.sig] || []).push(o); });
+        var top = Object.keys(bySig).sort(function (a, b) { return bySig[b].length - bySig[a].length; })[0], same = bySig[top];
+        if (same.length >= 2 && same.length >= g.items.length * .5) {
+          var items = []; same.forEach(function (o) { items = items.concat(o.items); o.merged = true; });
+          keep.push({ c: g.c, items: items, sig: top });
+        } else g.wrapper = true;
       }
     });
-    raw.forEach(function (g) { if (!g.merged && !keep.some(function (k) { return k.c === g.c; })) keep.push(g); });
+    raw.forEach(function (g) { if (!g.merged && !g.wrapper && !keep.some(function (k) { return k.c === g.c; })) keep.push(g); });
     keep = keep.filter(function (g) { return !keep.some(function (o) { return o !== g && o.items.some(function (it) { return it.contains(g.c); }); }); });
     return keep.map(function (g) {
       var seen = {}, items = g.items.map(function (el) { return cardItem(el, base); }).filter(function (it) { var k = it.link || it.title; if (!it.title || seen[k]) return false; seen[k] = 1; return true; });
@@ -183,7 +191,7 @@ var Importer = (function () {
     var root = doc.querySelector('main, [role="main"], #main, #content, .site-content') || doc.body, found = [];
     var groups = cardGroups(root, base);
     var gseen = {};
-    groups = groups.filter(function (g) { var k = g.items.slice(0, 3).map(function (i) { return i.link || i.title; }).join('|'); if (gseen[k]) return false; gseen[k] = 1; return true; });
+    var kept = []; groups = groups.filter(function (g) { var ls = g.items.map(function (i) { return i.link || i.title; }); var dup = kept.some(function (k) { return ls.filter(function (l) { return k.indexOf(l) >= 0; }).length >= ls.length * .5; }); if (!dup) kept.push(ls); return !dup; });
     groups.forEach(function (g) { found.push({ el: g.el, s: groupSection(g) }); });
     // embedded videos and podcasts
     var vframes = A(root.querySelectorAll('iframe[src*="youtube"], iframe[data-src*="youtube"], iframe[src*="vimeo"], video')).filter(function (f) { return !groups.some(function (g) { return g.el.contains(f); }); });
