@@ -237,7 +237,7 @@ S + template id + {pageId, sel, openMenu}
  2. Turn every <img> into a data URL (fetch → FileReader). Images that can't be fetched are dropped.
     `loading="lazy"` is removed first, because lazy images never load off-screen.
  3. Measure the full height and build the box map (sections, items, text, images; see §5.1).
- 4. Serialize to XHTML and wrap it with the contents of css/site.css in <svg><foreignObject>.
+ 4. Serialize to XHTML and wrap it with the contents of lib/site.css in <svg><foreignObject>.
  5. Draw it on a canvas (scale 1 for desktop, 2 for tablet/phone, 0.5 for thumbnails) → blob URL.
  6. Results are cached by width + options + HTML (last 80).
 ```
@@ -260,7 +260,7 @@ map = { width, height,             // CSS px of the render width (not the pixel 
 - `sectionIndex`: the section's position on the page; the footer is `-1` (`sectionId: 'footer'`).
 - `id`: `sectionId[:itemIndex][:field]`, with `:2`, `:3`… for repeats (for example several paragraphs of one text field).
 - The tags come from `render.js`: `data-sec`, `data-type`, `data-si` on each section (and the footer), `data-ii` on each item, `data-fk="{field}"` on each editable text or image. Field names match `FIELDS` / `ITEMF` in `edit.js`.
-- Test hook: `BAKE.maps('pv3')` returns the maps of a stage's current screenshots.
+- Test hook: `BAKE.maps()` returns the maps of the step 3 preview's current screenshots.
 
 ## 6. Importer logic (`Importer.analyse(html, url, log, {inner})`)
 
