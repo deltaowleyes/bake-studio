@@ -217,6 +217,15 @@ var Importer = (function () {
       var s = blockSection(b, base); if (s) found.push({ el: b, s: s });
     });
     found.sort(function (a, b) { return pos(a.el, b.el); });
+    // runs of 3+ article blocks become one story grid
+    var merged = [], run = [];
+    function flush() {
+      if (run.length >= 3) merged.push({ el: run[0].el, s: { id: id('s'), type: 'tiles', title: 'Stories', text: '', cols: 3, showImg: run.some(function (f) { return f.s.image; }), items: run.slice(0, 12).map(function (f) { var x = f.s; return { id: id('i'), title: x.headline || x.title, text: String(x.text || '').split(/\n/)[0].slice(0, 200), link: x.link, linkText: '', eyebrow: x.eyebrow || txt(f.el.querySelector('time, [class*="date"]')), image: x.image || undefined }; }) } });
+      else merged = merged.concat(run);
+      run = [];
+    }
+    found.forEach(function (f) { if (f.el.tagName == 'ARTICLE' && (f.s.type == 'text' || f.s.type == 'feature')) run.push(f); else { flush(); merged.push(f); } });
+    flush(); found = merged;
     var out = found.map(function (f) { return f.s; }).slice(0, 14);
     if (inner) {
       var h1 = doc.querySelector('main h1, h1'), d = (doc.querySelector('meta[name="description"]') || {}).content || '';
