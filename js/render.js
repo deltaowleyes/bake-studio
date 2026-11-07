@@ -3,7 +3,8 @@ var Render = (function () {
   var esc = Art.esc;
   var SECTION_TYPES = {
     hero: 'Hero banner', tiles: 'Card grid', feature: 'Featured story', list: 'Link list', text: 'Text block',
-    stats: 'Numbers', gallery: 'Gallery', testimonial: 'Quotes', cta: 'Call to action', contact: 'Contact details'
+    stats: 'Numbers', gallery: 'Gallery', testimonial: 'Quotes', cta: 'Call to action', contact: 'Contact details',
+    videos: 'Video gallery', podcast: 'Podcasts / audio', pagehead: 'Page header'
   };
   var MENU_TYPES = {
     bar: { name: 'Links bar', desc: 'Links in a row. Groups open as dropdowns.', vps: ['desktop', 'tablet'] },
@@ -14,14 +15,14 @@ var Render = (function () {
   };
 
   var FAMILIES = [
-    { k: 'news', name: 'Newsroom', desc: 'Newspaper rules, serif headlines and a big lead story.', hero: 'editorial', tiles: 'rule', feature: 'wide', menus: ['bar', 'mega', 'split', 'hamburger'] },
-    { k: 'app', name: 'App grid', desc: 'Rounded tiles you can tap, like a phone home screen.', hero: 'split', tiles: 'app', feature: 'card', menus: ['bar', 'mega', 'split', 'hamburger'] },
-    { k: 'mag', name: 'Magazine', desc: 'Full-width photo opener and a mixed-size card mosaic.', hero: 'overlay', tiles: 'bento', feature: 'split', menus: ['bar', 'mega', 'hamburger'] },
-    { k: 'min', name: 'Minimal', desc: 'Lots of white space, centred text and simple lists.', hero: 'center', tiles: 'list', feature: 'split', menus: ['bar', 'split', 'hamburger'], no: ['gallery'] },
-    { k: 'bold', name: 'Bold blocks', desc: 'Strong colour bands and icon cards.', hero: 'band', tiles: 'icons', feature: 'wide', menus: ['bar', 'mega', 'hamburger'], bands: true },
-    { k: 'portal', name: 'Community portal', desc: 'A dark welcome panel with search-style shortcuts.', hero: 'portal', tiles: 'icons', feature: 'card', menus: ['mega', 'bar', 'hamburger'] },
-    { k: 'story', name: 'Storyteller', desc: 'Photo-led, long-form pages for telling a story.', hero: 'overlay', tiles: 'cards', feature: 'split', menus: ['split', 'bar', 'hamburger'], maxTiles: 6 },
-    { k: 'board', name: 'Notice board', desc: 'Compact, two-column lists for lots of links.', hero: 'none', tiles: 'cols', feature: 'card', menus: ['mega', 'bar'], need: ['list', 'tiles'] }
+    { k: 'news', videos: 'lead', name: 'Newsroom', desc: 'Newspaper rules, serif headlines and a big lead story.', hero: 'editorial', tiles: 'rule', feature: 'wide', menus: ['bar', 'mega', 'split', 'hamburger'] },
+    { k: 'app', videos: 'grid', name: 'App grid', desc: 'Rounded tiles you can tap, like a phone home screen.', hero: 'split', tiles: 'app', feature: 'card', menus: ['bar', 'mega', 'split', 'hamburger'] },
+    { k: 'mag', videos: 'row', name: 'Magazine', desc: 'Full-width photo opener and a mixed-size card mosaic.', hero: 'overlay', tiles: 'bento', feature: 'split', menus: ['bar', 'mega', 'hamburger'] },
+    { k: 'min', videos: 'grid', name: 'Minimal', desc: 'Lots of white space, centred text and simple lists.', hero: 'center', tiles: 'list', feature: 'split', menus: ['bar', 'split', 'hamburger'], no: ['gallery'] },
+    { k: 'bold', videos: 'row', name: 'Bold blocks', desc: 'Strong colour bands and icon cards.', hero: 'band', tiles: 'icons', feature: 'wide', menus: ['bar', 'mega', 'hamburger'], bands: true },
+    { k: 'portal', videos: 'lead', name: 'Community portal', desc: 'A dark welcome panel with search-style shortcuts.', hero: 'portal', tiles: 'icons', feature: 'card', menus: ['mega', 'bar', 'hamburger'] },
+    { k: 'story', videos: 'lead', name: 'Storyteller', desc: 'Photo-led, long-form pages for telling a story.', hero: 'overlay', tiles: 'cards', feature: 'split', menus: ['split', 'bar', 'hamburger'], maxTiles: 6 },
+    { k: 'board', videos: 'grid', name: 'Notice board', desc: 'Compact, two-column lists for lots of links.', hero: 'none', tiles: 'cols', feature: 'card', menus: ['mega', 'bar'], need: ['list', 'tiles'] }
   ];
   var VARIANTS = [
     { k: 'a', name: 'Classic', r: 0, band: 'none', dens: 'm' },
@@ -33,13 +34,16 @@ var Render = (function () {
   function tpl(id) { return TEMPLATES.filter(function (t) { return t.id == id; })[0] || TEMPLATES[0]; }
 
   function compat(t, P) {
-    var why = [], f = t.fam, dm = P.menu.vp.desktop.type, types = P.sections.map(function (s) { return s.type; });
+    var why = [], f = t.fam, dm = P.menu.vp.desktop.type, all = allSections(P), types = all.map(function (s) { return s.type; });
     if (f.menus.indexOf(dm) < 0) why.push('doesn’t offer a ' + MENU_TYPES[dm].name.toLowerCase() + ' on desktop');
     (f.no || []).forEach(function (n) { if (types.indexOf(n) >= 0) why.push('has no ' + SECTION_TYPES[n].toLowerCase() + ' section'); });
-    if (f.maxTiles) P.sections.forEach(function (s) { if (s.type == 'tiles' && (s.items || []).length > f.maxTiles) why.push('fits up to ' + f.maxTiles + ' cards per grid (“' + s.title + '” has ' + s.items.length + ')'); });
+    if (f.maxTiles) all.forEach(function (s) { if (s.type == 'tiles' && (s.items || []).length > f.maxTiles) why.push('fits up to ' + f.maxTiles + ' cards per grid (“' + s.title + '” has ' + s.items.length + ')'); });
     if (f.need && !f.need.some(function (n) { return types.indexOf(n) >= 0; })) why.push('needs a card grid or link list');
     return { ok: !why.length, why: why };
   }
+
+  function allSections(P) { var o = []; (P.pages || []).forEach(function (p) { o = o.concat(p.sections); }); return o; }
+  function pageOf(P, id) { var ps = P.pages || []; return ps.filter(function (p) { return p.id == id; })[0] || ps[0] || { sections: [] }; }
 
   /* ---------- art helpers ---------- */
   function pal(P) { return P.brand.pal; }
@@ -54,6 +58,12 @@ var Render = (function () {
   function picked(P, kind) { var b = P.brand; return b.opts[kind].filter(function (o) { return o.id == b.pick[kind]; })[0] || b.opts[kind][0]; }
   function ills(P) { var b = P.brand, s = b.opts.ill.filter(function (o) { return b.star[o.id]; }), p = picked(P, 'ill'); if (p && s.indexOf(p) < 0) s.unshift(p); return s.length ? s : b.opts.ill.slice(0, 3); }
   function illAt(P, i) { var l = ills(P); return l.length ? asset(P, l[i % l.length], 'ill') : ''; }
+  function imageRef(P, im, i) {
+    if (!im) return '';
+    if (im.kind == 'hero') return asset(P, picked(P, 'hero'), 'hero');
+    if (im.kind == 'ill') return illAt(P, im.i || i || 0);
+    return asset(P, im, 'img');
+  }
   function sectionImage(P, s, i) {
     var im = s.image;
     if (!im) return '';
@@ -108,8 +118,8 @@ var Render = (function () {
     tiles: function (P, s, f) {
       var st = s.style && s.style != 'auto' ? s.style : f.tiles, cols = s.cols || 3;
       return '<section class="s s-tiles"><div class="w">' + head(s) + '<div class="tl tl-' + st + ' c' + cols + '">' + (s.items || []).map(function (it, i) {
-        var pic = (s.showImg || st == 'icons') ? '<span class="tim">' + illAt(P, i) + '</span>' : '';
-        return '<a class="ti" href="' + href(it.link) + '">' + pic + '<span class="tx"><h3>' + esc(it.title) + '</h3>' + (it.text ? '<p>' + esc(it.text) + '</p>' : '') + (it.linkText ? '<b>' + esc(it.linkText) + ' →</b>' : '') + '</span></a>';
+        var pic = s.showImg === false && st != 'icons' ? '' : it.image ? '<span class="tim">' + imageRef(P, it.image, i) + '</span>' : (s.showImg || st == 'icons') ? '<span class="tim">' + illAt(P, i) + '</span>' : '';
+        return '<a class="ti" href="' + href(it.link) + '">' + pic + '<span class="tx">' + (it.eyebrow ? '<small class="meta">' + esc(it.eyebrow) + '</small>' : '') + '<h3>' + esc(it.title) + '</h3>' + (it.text ? '<p>' + esc(it.text) + '</p>' : '') + (it.linkText ? '<b>' + esc(it.linkText) + ' →</b>' : '') + '</span></a>';
       }).join('') + '</div></div></section>';
     },
     feature: function (P, s, f) {
@@ -125,9 +135,30 @@ var Render = (function () {
       return '<section class="s s-text' + (img ? ' wi' : '') + '"><div class="w"><div class="tb">' + (s.title ? '<h2>' + esc(s.title) + '</h2>' : '') + paras(s.text) + btn(s.linkText, s.link, 'mo') + '</div>' + (img ? '<div class="fm">' + img + '</div>' : '') + '</div></section>';
     },
     stats: function (P, s) { return '<section class="s s-stats"><div class="w">' + head(s) + '<div class="stt">' + (s.items || []).map(function (it) { return '<div><b>' + esc(it.title) + '</b><span>' + esc(it.text) + '</span></div>'; }).join('') + '</div></div></section>'; },
-    gallery: function (P, s) { return '<section class="s s-gallery"><div class="w">' + head(s) + '<div class="gl">' + (s.items || []).map(function (it, i) { return '<figure>' + (it.image ? asset(P, it.image, 'img') : illAt(P, i)) + (it.title ? '<figcaption>' + esc(it.title) + '</figcaption>' : '') + '</figure>'; }).join('') + '</div></div></section>'; },
+    gallery: function (P, s) { return '<section class="s s-gallery"><div class="w">' + head(s) + '<div class="gl">' + (s.items || []).map(function (it, i) { return '<figure>' + (it.image ? imageRef(P, it.image, i) : illAt(P, i)) + (it.title ? '<figcaption>' + esc(it.title) + '</figcaption>' : '') + '</figure>'; }).join('') + '</div></div></section>'; },
     testimonial: function (P, s) { return '<section class="s s-quotes"><div class="w">' + head(s) + '<div class="qs">' + (s.items || []).map(function (it) { return '<blockquote><p>“' + esc(it.text) + '”</p><cite>' + esc(it.title) + '</cite></blockquote>'; }).join('') + '</div></div></section>'; },
     cta: function (P, s) { return '<section class="s s-cta"><div class="w"><h2>' + esc(s.title) + '</h2>' + paras(s.text) + btn(s.linkText, s.link, 'bt bt3') + '</div></section>'; },
+    videos: function (P, s, f) {
+      var st = s.style && s.style != 'auto' ? s.style : (f.videos || 'grid'), items = (s.items || []).slice(0, 12);
+      function card(it, i, big) {
+        var th = it.image ? imageRef(P, it.image, i) : illAt(P, i);
+        return '<a class="vi' + (big ? ' big' : '') + '" href="' + href(it.link) + '"><span class="vt">' + th + '<span class="play" aria-hidden="true"></span>' + (it.duration ? '<span class="du">' + esc(it.duration) + '</span>' : '') + '</span><span class="vx">' + (it.eyebrow ? '<small class="meta">' + esc(it.eyebrow) + '</small>' : '') + '<h3>' + esc(it.title) + '</h3>' + (big && it.text ? '<p>' + esc(it.text) + '</p>' : '') + '</span></a>';
+      }
+      var body;
+      if (st == 'lead' && items.length > 1) body = '<div class="vl-lead">' + card(items[0], 0, true) + '<div class="rail">' + items.slice(1, 5).map(function (it, i) { return card(it, i + 1); }).join('') + '</div></div>' + (items.length > 5 ? '<div class="vg">' + items.slice(5, 9).map(function (it, i) { return card(it, i + 5); }).join('') + '</div>' : '');
+      else if (st == 'row') body = '<div class="vrow">' + items.slice(0, 8).map(function (it, i) { return card(it, i); }).join('') + '</div><div class="arr" aria-hidden="true"><span>‹</span><span>›</span></div>';
+      else body = '<div class="vg">' + items.map(function (it, i) { return card(it, i); }).join('') + '</div>';
+      return '<section class="s s-videos vs-' + st + '"><div class="w">' + head(s) + body + '</div></section>';
+    },
+    podcast: function (P, s) {
+      return '<section class="s s-podcast"><div class="w">' + head(s) + '<div class="pods">' + (s.items || []).slice(0, 8).map(function (it, i) {
+        return '<div class="pod"><span class="pc">' + (it.image ? imageRef(P, it.image, i) : illAt(P, i + 2)) + '</span><div class="px"><h3>' + esc(it.title) + '</h3>' + (it.text ? '<p>' + esc(it.text) + '</p>' : '') + '<div class="bar"><span class="pb" aria-hidden="true">▶</span><span class="tr"><i style="width:' + (18 + (i * 23) % 60) + '%"></i></span><span class="tm">00:00</span></div></div></div>';
+      }).join('') + '</div></div></section>';
+    },
+    pagehead: function (P, s) {
+      var img = s.image ? imageRef(P, s.image) : '';
+      return '<section class="s s-pagehead' + (img ? ' wi' : '') + '"><div class="w"><p class="crumb">Home <span>/</span> ' + esc(s.title) + '</p><h1>' + esc(s.title) + '</h1>' + paras(s.text) + '</div>' + (img ? '<div class="phm">' + img + '</div>' : '') + '</section>';
+    },
     contact: function (P, s) { return '<section class="s s-contact"><div class="w">' + head(s) + '<dl class="ct">' + (s.items || []).map(function (it) { return '<div><dt>' + esc(it.title) + '</dt><dd>' + (it.link ? '<a href="' + href(it.link) + '">' + esc(it.text || it.link) + '</a>' : esc(it.text)) + '</dd></div>'; }).join('') + '</dl>' + btn(s.linkText, s.link) + '</div></section>'; }
   };
 
@@ -141,9 +172,10 @@ var Render = (function () {
     opt = opt || {}; var t = tpl(tplId), f = t.fam, v = t.v, p = pal(P), F = font(P);
     var dark = Art.lum(p.bg) < 110;
     var vars = '--bg:' + p.bg + ';--ink:' + p.ink + ';--acc:' + p.acc + ';--soft:' + p.soft + ';--oa:' + Art.onColor(p.acc) + ';--oi:' + Art.onColor(p.ink) + ';--line:' + Art.mix(p.bg, p.ink, dark ? .3 : .16) + ';--mute:' + Art.mix(p.ink, p.bg, .3) + ';--card:' + (dark ? Art.mix(p.bg, p.ink, .06) : '#ffffff') + ';--hf:' + F.h.replace(/"/g, "'") + ';--bf:' + F.b.replace(/"/g, "'") + ';--hw:' + F.w + ';--r:' + v.r + 'px';
-    var secs = P.sections.map(function (s, i) {
+    var secs = pageOf(P, opt.pageId).sections.map(function (s, i) {
       var h = (SEC[s.type] || SEC.text)(P, s, f), bg = s.bg && s.bg != 'auto' ? s.bg : (v.band != 'none' && i % 2 == 1 && s.type != 'hero' ? v.band : 'default');
       if (f.bands && s.type == 'cta') bg = 'acc';
+      if (s.type == 'pagehead' && (!s.bg || s.bg == 'auto')) bg = f.k == 'bold' || f.k == 'portal' ? 'ink' : 'soft';
       return h.replace('<section class="s ', '<section data-sec="' + s.id + '" class="s bg-' + bg + ' al-' + (s.align || 'auto') + (opt.sel == s.id ? ' sel' : '') + ' ');
     }).join('');
     var mv = opt.openMenu;
@@ -154,5 +186,5 @@ var Render = (function () {
       (P.menu.vp.phone.type == 'bottom' ? '<div class="vh vh-p">' + bottomBar(P, 'phone', mv == 'phone') + '</div>' : '') + '</div>';
   }
 
-  return { page: page, TEMPLATES: TEMPLATES, FAMILIES: FAMILIES, tpl: tpl, compat: compat, SECTION_TYPES: SECTION_TYPES, MENU_TYPES: MENU_TYPES, asset: asset, picked: picked };
+  return { page: page, pageOf: pageOf, allSections: allSections, imageRef: imageRef, TEMPLATES: TEMPLATES, FAMILIES: FAMILIES, tpl: tpl, compat: compat, SECTION_TYPES: SECTION_TYPES, MENU_TYPES: MENU_TYPES, asset: asset, picked: picked };
 })();

@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>BAKE Studio</title>
 <meta name="description" content="BAKE Studio: import your site, set your brand, shape your sections and menu, then pick a template that fits.">
-<link rel="stylesheet" href="css/studio.css?v=5">
-<link rel="stylesheet" href="css/site.css?v=5">
+<link rel="stylesheet" href="css/studio.css?v=6">
+<link rel="stylesheet" href="css/site.css?v=6">
 </head>
 <body>
 <header class="top">
@@ -65,7 +65,8 @@
     <h2 id="h3s" class="sth">3. Sections</h2>
     <div class="split">
       <div>
-        <div class="card"><h3>Sections on your page</h3><p class="mu">Tap a section here or in the preview to edit it.</p>
+        <div class="card" id="pbar"></div>
+        <div class="card"><h3>Sections on this page</h3><p class="mu">Tap a section here or in the preview to edit it.</p>
           <ol id="slist" class="slist"></ol>
           <div class="row nowrap"><select id="addtype" aria-label="Section type"></select><button id="addsec">Add section</button></div>
         </div>
@@ -104,6 +105,7 @@
       <div id="tgrid" class="tg"></div></div>
     <div class="card" id="tpc"><div class="bar"><div style="flex:1;min-width:200px"><h3 id="tpn"></h3><p class="mu" id="tpm"></p></div>
       <button id="tprev" aria-label="Previous template">←</button><button id="tnext" aria-label="Next template">→</button><button id="tuse"></button></div>
+      <div class="bar" style="margin-top:10px"><label for="tpage" style="margin:0">Page</label><select id="tpage" style="width:auto;max-width:100%"></select></div>
       <div class="row vps" data-vpk="tvp"></div><div class="stage" id="pv5"></div></div>
     <div class="card" id="reqc"><h3>Request development</h3>
       <p class="mu">Happy with your choices? Send them to us and we’ll build your site. Add anything you’d like changed.</p>
@@ -118,11 +120,12 @@
   </section>
 
   <nav class="pager" id="pager"></nav>
+  <dialog id="picker" aria-labelledby="pkh"><div class="pkhead"><h3 id="pkh">Choose an image</h3><button id="pkclose" aria-label="Close">✕</button></div><div id="pkbody"></div></dialog>
 </main>
-<script src="js/art.js?v=5"></script>
-<script src="js/importer.js?v=5"></script>
-<script src="js/render.js?v=5"></script>
-<script src="js/shot.js?v=5"></script>
-<script src="js/app.js?v=5"></script>
+<script src="js/art.js?v=6"></script>
+<script src="js/importer.js?v=6"></script>
+<script src="js/render.js?v=6"></script>
+<script src="js/shot.js?v=6"></script>
+<script src="js/app.js?v=6"></script>
 </body>
 </html>
