@@ -59,18 +59,45 @@ var Render = (function () {
   function picked(P, kind) { var b = P.brand; return b.opts[kind].filter(function (o) { return o.id == b.pick[kind]; })[0] || b.opts[kind][0]; }
   function ills(P) { var b = P.brand, s = b.opts.ill.filter(function (o) { return b.star[o.id]; }), p = picked(P, 'ill'); if (p && s.indexOf(p) < 0) s.unshift(p); return s.length ? s : b.opts.ill.slice(0, 3); }
   function illAt(P, i) { var l = ills(P); return l.length ? asset(P, l[i % l.length], 'ill') : ''; }
-  function imageRef(P, im, i) {
+  /* the picture an ImageRef points at, before any crop or frame (the image editor crops from this) */
+  function imageRaw(P, im, i) {
     if (!im) return '';
     if (im.kind == 'hero') return asset(P, picked(P, 'hero'), 'hero');
     if (im.kind == 'ill') return illAt(P, im.i || i || 0);
     return asset(P, im, 'img');
   }
-  function sectionImage(P, s, i) {
-    var im = s.image;
-    if (!im) return '';
-    if (im.kind == 'hero') return asset(P, picked(P, 'hero'), 'hero');
-    if (im.kind == 'ill') return illAt(P, im.i || i || 0);
-    return asset(P, im, 'img');
+  function imageRef(P, im, i) { return decorate(imageRaw(P, im, i), im); }
+  function sectionImage(P, s, i) { return imageRef(P, s.image, i); }
+
+  /* ---------- image crop + frame (ARCHITECTURE.md §3.5) ----------
+     A crop is stored as a ready-made picture (im.cropSrc). A frame becomes the class "fr" (+ "fr-{art}")
+     and CSS variables on the <img>/<svg>; the rules are at the end of site.css ("image frames"). */
+  var SHADOWS = { none: 'none', soft: '0 4px 14px rgba(0,0,0,.14)', medium: '0 10px 26px rgba(0,0,0,.22)', strong: '0 20px 44px rgba(0,0,0,.34)', offset: '12px 12px 0 var(--acc)', hard: '8px 8px 0 var(--ink)', glow: '0 0 0 3px var(--acc),0 0 26px var(--acc)' };
+  var FRAMES = { polaroid: 'Polaroid', tilt: 'Tilted polaroid', mat: 'Gallery mat', gold: 'Gold frame', double: 'Double line', vintage: 'Vintage', circle: 'Circle', arch: 'Arch', blob: 'Organic blob', offset: 'Offset block', neon: 'Neon glow' };
+  var BSTYLES = ['solid', 'dashed', 'dotted', 'double', 'groove', 'ridge', 'inset', 'outset'];
+  function frameAttrs(fr) {
+    if (!fr) return null;
+    var st = [], set = function (v) { return v != null && v !== ''; };
+    if (set(fr.bw)) st.push('--ibw:' + num(fr.bw) + 'px');
+    if (BSTYLES.indexOf(fr.bs) >= 0) st.push('--ibs:' + fr.bs);
+    if (okColor(fr.bc)) st.push('--ibc:' + fr.bc);
+    if (set(fr.br)) st.push('--ibr:' + num(fr.br) + 'px');
+    if (SHADOWS[fr.sh]) st.push('--ish:' + SHADOWS[fr.sh]);
+    if (set(fr.pad)) st.push('--ipad:' + num(fr.pad) + 'px');
+    if (okColor(fr.bg)) st.push('--ibg:' + fr.bg);
+    if (set(fr.tilt) && num(fr.tilt)) st.push('--itf:rotate(' + num(fr.tilt) + 'deg)');
+    var art = FRAMES[fr.art] ? ' fr-' + fr.art : '';
+    return art || st.length ? { cls: 'fr' + art, style: st.join(';') } : null;
+  }
+  function decorate(html, im) {
+    if (!html || !im) return html;
+    if (/^data:image\//.test(im.cropSrc || '')) html = '<img src="' + esc(im.cropSrc) + '" alt="' + esc(im.label || '') + '">';
+    var f = frameAttrs(im.frame); if (!f) return html;
+    return html.replace(/^<(img|svg)\b([^>]*?)(\/?)>/, function (m, tag, attrs, sl) {
+      attrs = /\sclass="/.test(attrs) ? attrs.replace(/\sclass="/, ' class="' + f.cls + ' ') : attrs + ' class="' + f.cls + '"';
+      if (f.style) attrs = /\sstyle="/.test(attrs) ? attrs.replace(/\sstyle="/, ' style="' + f.style + ';') : attrs + ' style="' + f.style + '"';
+      return '<' + tag + attrs + sl + '>';
+    });
   }
   function href(u) { return esc(u || '#'); }
   /* data-fk marks an editable field so Shot can map where it landed (the key matches the editor's field name) */
@@ -233,7 +260,7 @@ var Render = (function () {
       (P.menu.vp.phone.type == 'bottom' ? '<div class="vh vh-p">' + bottomBar(P, 'phone', mv == 'phone') + '</div>' : '') + '</div>';
   }
 
-  return { page: page, pageOf: pageOf, allSections: allSections, imageRef: imageRef, TEMPLATES: TEMPLATES, FAMILIES: FAMILIES, tpl: tpl, compat: compat, SECTION_TYPES: SECTION_TYPES, MENU_TYPES: MENU_TYPES, asset: asset, picked: picked };
+  return { page: page, pageOf: pageOf, allSections: allSections, imageRef: imageRef, imageRaw: imageRaw, decorate: decorate, SHADOWS: SHADOWS, FRAMES: FRAMES, BSTYLES: BSTYLES, TEMPLATES: TEMPLATES, FAMILIES: FAMILIES, tpl: tpl, compat: compat, SECTION_TYPES: SECTION_TYPES, MENU_TYPES: MENU_TYPES, asset: asset, picked: picked };
 })();
 
 export { Render };

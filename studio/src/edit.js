@@ -149,6 +149,15 @@ export const ITEMF = {
 export const FOOTER_F = [['motto', 'Motto or tagline'], ['text', 'Bottom line (for example © name)']];
 /** The object a field path points at: 'footer', 'sec' (selected section) or 'item:N'. */
 export function target(path) { const s = cur(); if (path == 'footer') return S.footer; if (path == 'sec') return s; return s && s.items && s.items[+path.split(':')[1]]; }
+/** What an image shows when its ref is undefined (template default), as an explicit ref the editor can save on. */
+export function imageDefault(type, itemIndex) {
+  const i = itemIndex || 0;
+  if (type == 'hero') return { kind: 'hero' };
+  if (type == 'feature') return { kind: 'ill', i: 1 };
+  if (type == 'podcast') return { kind: 'ill', i: i + 2 };
+  if (type == 'tiles' || type == 'gallery' || type == 'videos') return { kind: 'ill', i };
+  return null;
+}
 /** Element id of an editor field, so the preview overlays can jump to it. */
 export function fieldId(path, k) { return 'f-' + path.replace(/\W/g, '_') + '-' + k; }
 

@@ -46,6 +46,7 @@ bake-studio/
         │   ├── FontPicker.jsx   searchable Google Fonts picker (full catalogue)
         │   ├── ColourPicker.jsx brand colours + every art.js palette + free picker + hex
         │   ├── SortableList.jsx drag-and-drop list (SortableJS)
+        │   ├── ImageEditor.jsx  crop (Cropper.js) + border and frame modal for one image
         │   ├── Field.jsx     one editor field (text, textarea, select, checkbox, image)
         │   ├── ImagePicker.jsx  the "Choose an image" dialog
         │   └── Html.jsx      shows a small generated SVG/img string (artwork thumbnails only)
@@ -63,7 +64,7 @@ bake-studio/
 
 **Build and publish:** `cd studio && npm install && npm run build`, then commit `index.html`, `assets/` and the source together and push to `main`. Vite gives built files hashed names, so there's no `?v=` cache number to bump any more.
 
-**Packages:** react, react-dom, sortablejs; dev: vite, @vitejs/plugin-react, tailwindcss, @tailwindcss/vite.
+**Packages:** react, react-dom, sortablejs, cropperjs 1.x (loaded only when the image editor opens); dev: vite, @vitejs/plugin-react, tailwindcss, @tailwindcss/vite.
 
 **Module dependencies:** `importer` → `art`; `render` → `art`; `shot` → `site.css` (raw text), `fonts`; `edit` → `store`, `art`, `importer`; steps → `store`, `edit`, `render`, components.
 
@@ -144,6 +145,7 @@ Section    = { id, type, title, text, …typeFields, items?: [Item], bg?, align?
 Item       = { id, title, text, link, linkText, eyebrow?, duration?, image? }
 ImageRef   = undefined (template default) | null (no image)
            | { kind: 'hero' } | { kind: 'ill', i } | { kind: 'img', src, label? }
+             …each may also carry crop?, cropSrc?, frame? (§3.5)
 MenuItem   = { id, label, href } | { id, label, href, children: [MenuItem] }   // a group has children
 MenuConfig = { type: 'bar' | 'mega' | 'split' | 'hamburger' | 'bottom', logo: 'left' | 'center', sticky, cta, search }
 Request    = { id, at (ms), name, email, text, tpl, status: 'Requested', summary: { sections: [titles], menu: [labels] } }
@@ -191,6 +193,23 @@ lx = { pt, pb (px space above/below), cw (720|960|1200|1440|'full'), mh (min hei
 - **How it renders:** `render.js` sets `FX` while drawing a section; `fk(k)` / `ifk(k)` add an inline `style` to that field's element. Sizes over 20 px use `clamp(…, cqw, …)` so big text shrinks on phones. `lxAttr()` adds `lx-*` classes and CSS variables (`--pt --pb --cw --mh --gap --r --sbg --sink`) to the `<section>`. The rules for those classes are at the end of `site.css` ("inspector overrides"). On phones, space above and below is 60%.
 - **Fonts:** any Google font used (site fonts and `fx.font`) is collected while rendering and written on the page root as `data-gf="Family:400,700|…"`. Colours are only accepted as hex.
 
+### 3.5 Image crop and frame (`ImageRef.crop`, `cropSrc`, `frame`)
+
+Set in step 3's image editor (`ImageEditor.jsx`). An image whose ref is `undefined` (template default) gets an explicit ref first (`imageDefault(type, itemIndex)` in `edit.js`), so it can carry a crop or frame.
+
+```js
+crop     = { x, y, w, h (fractions of the original), rotate (deg), aspect ('slot'|'free'|'1'|'4/3'|'3/2'|'16/9'|'3/4') }
+cropSrc  = 'data:image/webp;…'   // the cropped picture, max 1600 px; the original (src, or hero/ill artwork) is kept for re-cropping
+frame    = { art ('polaroid'|'tilt'|'mat'|'gold'|'double'|'vintage'|'circle'|'arch'|'blob'|'offset'|'neon'),
+             bw (px), bs (border style), bc (hex), br (px radius), sh ('none'|'soft'|'medium'|'strong'|'offset'|'hard'|'glow'),
+             pad (px mat), bg (hex mat colour), tilt (deg) }
+```
+
+- **Crop:** Cropper.js on the original. Generated SVG artwork is turned into a large SVG data URL; web images are downloaded first (if their site blocks that, cropping is refused with a message and framing still works). "Fits this spot" uses the image's box from the box map, so the template doesn't cut it again.
+- **Frame:** `Render.decorate()` (used by `imageRef`) swaps in `cropSrc` and adds `class="fr fr-{art}"` and inline CSS variables (`--ibw --ibs --ibc --ibr --ish --ipad --ibg --itf`) to the `<img>`/`<svg>`. The "image frames" rules at the end of `site.css` turn those into border, radius, shadow, padding, background, tilt and filter. Frame styles only set variables, and the editor's choices are inline variables, so the editor always wins. A framed image's container stops clipping (`:has(> .fr)`), so shadows and tilts show.
+- **Re-shooting:** every change is saved to `S`, which changes the page HTML, so `Preview` makes a new screenshot through `Shot.take` (no extra wiring).
+- "Use on all images in this section" copies the frame to every item image.
+
 ## 4. Logic per step
 
 ### Step 1: Your site
@@ -222,7 +241,7 @@ lx = { pt, pb (px space above/below), cw (720|960|1200|1440|'full'), mh (min hei
 - **Image picker** (`<dialog id="picker">`): no image, the hero, illustrations 1–3, uploads (or upload a new one), and every `lib` image (searchable). The choice is stored as an `ImageRef`.
 - **Reordering:** drag the ⠿ handle in the section list (SortableJS via `SortableList`), or use the ↑/↓ buttons (keyboard route). SortableJS moves the DOM; `SortableList` puts it back and the new order is committed to `S`, so React stays in charge.
 - **Click-to-edit overlays:** the step 3 preview (`<Preview onPart>`) draws one empty, see-through `<button class="ov">` per box in the screenshot's box map (§5.1), positioned in percentages so they stay aligned at any width. They contain no page code. Hover shows a label ("Headline", "Item 2"…).
-  - Clicking a **section** or **item** selects the section and opens the Inspector on its Section tab. Clicking **text** opens the Text tab for that field. Clicking an **image** opens the image picker.
+  - Clicking a **section** or **item** selects the section and opens the Inspector on its Section tab. Clicking **text** opens the Text tab for that field. Clicking an **image** opens the image editor (crop, border and frame, Replace image → picker). Image fields in the left editor also have a "Crop and frame" button.
   - Section boxes are keyboard-focusable; inner boxes are `tabindex=-1` (the section list is the keyboard route).
 - **Inspector** (`Inspector.jsx`, fixed on the right, 380 px; the page and header make room on screens ≥1100 px; Esc closes):
   - **Text:** the field's content, Google font (`FontPicker`), size, weight (limited to the font's weights), letter spacing, line height, capitals, italic, colour (`ColourPicker`). Item fields style every item of the section.

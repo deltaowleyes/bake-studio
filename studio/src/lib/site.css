@@ -290,3 +290,20 @@
   .pv .s-hero.lx-pt .hx{padding-top:calc(var(--pt) * .6)!important}
   .pv .s-hero.lx-pb .hx{padding-bottom:calc(var(--pb) * .6)!important}
 }
+
+/* ---------- image frames (set in the step 3 image editor; see render.js frameAttrs) ----------
+   The frame sits on the <img>/<svg> itself through CSS variables. Frame styles (.fr-*) only set
+   variables, and the editor's own choices arrive as inline variables, so they always win. */
+.pv .fr{box-sizing:border-box!important;border:var(--ibw,0px) var(--ibs,solid) var(--ibc,var(--ink))!important;border-radius:var(--ibr,var(--r))!important;box-shadow:var(--ish,none)!important;padding:var(--ipad,0px)!important;background:var(--ibg,transparent)!important;transform:var(--itf,none);filter:var(--iflt,none)}
+.pv :has(> .fr){overflow:visible!important;border-radius:0!important;background:none!important}
+.pv .fr-polaroid,.pv .fr-tilt{--ipad:10px 10px 38px;--ibg:#ffffff;--ish:0 8px 22px rgba(0,0,0,.24);--ibr:2px}
+.pv .fr-tilt{--itf:rotate(-2.5deg)}
+.pv .fr-mat{--ibw:10px;--ibc:#2b2622;--ipad:22px;--ibg:#f6f1e7;--ibr:0px;--ish:0 6px 18px rgba(0,0,0,.18)}
+.pv .fr-gold{--ibw:14px;--ibs:ridge;--ibc:#c49a3a;--ipad:6px;--ibg:#f5ecd2;--ibr:0px;--ish:0 6px 16px rgba(0,0,0,.25)}
+.pv .fr-double{--ibw:7px;--ibs:double;--ipad:6px;--ibr:0px}
+.pv .fr-vintage{--ibw:10px;--ibc:#fffaf0;--ibr:4px;--ish:0 4px 14px rgba(60,40,20,.3);--iflt:sepia(.45) saturate(.85) contrast(1.05)}
+.pv .fr-circle{--ibr:50%;aspect-ratio:1/1!important;height:auto!important;object-fit:cover}
+.pv .fr-arch{--ibr:999px 999px 6px 6px}
+.pv .fr-blob{--ibr:42% 58% 63% 37% / 41% 44% 56% 59%}
+.pv .fr-offset{--ish:14px 14px 0 var(--acc);--ibr:0px}
+.pv .fr-neon{--ibw:2px;--ibc:var(--acc);--ish:0 0 0 3px var(--acc),0 0 28px var(--acc)}

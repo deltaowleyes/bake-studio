@@ -6,7 +6,7 @@ import Html from './Html.jsx';
 
 /** f = [key, label, kind?, options?]; obj = the thing being edited; path = 'sec' | 'item:N' | 'footer'.
     idp prefixes the element id when the same field appears twice on screen (the Inspector uses 'i'). */
-export default function Field({ f, obj, path, openPicker, idp = '' }) {
+export default function Field({ f, obj, path, openPicker, openEditor, idp = '' }) {
   const [k, lab, kind = 'text'] = f, id = idp + fieldId(path, k);
   const set = v => commit(() => { obj[k] = v; });
   if (kind == 'pick') {
@@ -18,6 +18,7 @@ export default function Field({ f, obj, path, openPicker, idp = '' }) {
           : im === undefined ? <span className="pv-th"><span className="mu">Template default</span></span>
           : <Html className="pv-th" html={Render.imageRef(S, im, 0)} />}
         <button className="sm" data-pick={path} onClick={() => openPicker(path, k)}>Choose image</button>
+        {openEditor && im !== null && <button className="sm" onClick={() => openEditor(path, k)}>Crop and frame</button>}
         {im && <button className="sm" onClick={() => set(null)}>Remove</button>}
       </div>
     </>;

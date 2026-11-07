@@ -19,7 +19,7 @@ const LAYOUT_KEYS = ['layout', 'style', 'cols', 'showImg'];
 const WIDTHS = [['', 'Template default'], ['720', 'Narrow (720 px)'], ['960', 'Medium (960 px)'], ['1200', 'Standard (1200 px)'], ['1440', 'Wide (1440 px)'], ['full', 'Full width']];
 
 /** A number with a slider. value '' = template default (dflt positions the slider). */
-function Num({ id, label, value, onChange, min, max, step = 1, unit, dflt }) {
+export function Num({ id, label, value, onChange, min, max, step = 1, unit, dflt }) {
   const has = value !== '' && value != null;
   return (
     <div className="mb-3">
@@ -37,7 +37,7 @@ function Num({ id, label, value, onChange, min, max, step = 1, unit, dflt }) {
     </div>
   );
 }
-function Sel({ id, label, value, onChange, options }) {
+export function Sel({ id, label, value, onChange, options }) {
   return <div className="mb-3"><label htmlFor={id} className="mt-0">{label}</label>
     <select id={id} value={value == null ? '' : String(value)} onChange={e => onChange(e.target.value)}>{options.map(o => <option key={o[0]} value={o[0]}>{o[1]}</option>)}</select></div>;
 }

@@ -7,6 +7,7 @@ import { nid, curPage, SEC, cur, placeholderPage, defaultSection, FIELDS, ITEMF,
 import Preview, { SizeButtons, fieldDef } from '../components/Preview.jsx';
 import ImagePicker from '../components/ImagePicker.jsx';
 import Inspector from '../components/Inspector.jsx';
+import ImageEditor from '../components/ImageEditor.jsx';
 import SortableList from '../components/SortableList.jsx';
 import Field from '../components/Field.jsx';
 
@@ -14,17 +15,18 @@ function move(list, i, d) { const j = i + d; list.splice(j, 0, list.splice(i, 1)
 
 export default function Step3() {
   useStudio();
-  const [pick, setPick] = useState(null), [addType, setAddType] = useState('hero');
+  const [pick, setPick] = useState(null), [imgEdit, setImgEdit] = useState(null), [addType, setAddType] = useState('hero');
   const p = curPage(), secs = SEC();
   if (S.ui.sel != 'footer' && !cur() && secs[0]) S.ui.sel = secs[0].id;
   const s = S.ui.sel == 'footer' ? null : cur();
   const openPicker = (path, k) => setPick({ path, k });
+  const openEditor = (path, k) => { const x = cur(); setImgEdit({ path, k, box: null, type: x ? x.type : '', item: /^item:/.test(path) ? +path.slice(5) : null }); };
   const select = id => commit(S => { S.ui.sel = id; S.ui.insp.key = null; if (S.ui.insp.tab == 'text') S.ui.insp.tab = 'section'; });
 
   /* a click on the preview: images open the picker; sections, items and text open the Inspector */
   function editPart(b) {
     const path = b.sectionType == 'footer' ? 'footer' : b.itemIndex != null ? 'item:' + b.itemIndex : 'sec', f = b.field && fieldDef(b);
-    if (f && f[2] == 'pick') { select(b.sectionId); return openPicker(path, b.field); }
+    if (f && f[2] == 'pick') { select(b.sectionId); return setImgEdit({ path, k: b.field, box: { width: b.width, height: b.height }, type: b.sectionType, item: b.itemIndex }); }
     const text = b.type == 'text' && b.field;
     commit(S => { S.ui.sel = b.sectionId; S.ui.insp = { open: true, tab: text ? 'text' : 'section', key: text ? b.field : null, item: text ? b.itemIndex : null }; });
   }
@@ -83,10 +85,10 @@ export default function Step3() {
           <div className="card" id="sedit">
             {S.ui.sel == 'footer' ? <>
               <h3>Footer</h3>
-              {FOOTER_F.map(f => <Field key={f[0]} f={f} obj={S.footer} path="footer" openPicker={openPicker} />)}
+              {FOOTER_F.map(f => <Field key={f[0]} f={f} obj={S.footer} path="footer" openPicker={openPicker} openEditor={openEditor} />)}
             </> : !s ? <p className="mu">Add a section to start.</p> : <>
               <h3>Edit: {Render.SECTION_TYPES[s.type]}</h3>
-              {(FIELDS[s.type] || []).concat(F_COMMON).map(f => <Field key={f[0]} f={f} obj={s} path="sec" openPicker={openPicker} />)}
+              {(FIELDS[s.type] || []).concat(F_COMMON).map(f => <Field key={f[0]} f={f} obj={s} path="sec" openPicker={openPicker} openEditor={openEditor} />)}
               {ITEMF[s.type] && <>
                 <h4>Items ({(s.items || []).length})</h4>
                 <div className="items">
@@ -98,7 +100,7 @@ export default function Step3() {
                         <button className="ib" aria-label="Move item down" disabled={i == s.items.length - 1} onClick={() => commit(() => move(s.items, i, 1))}>↓</button>
                         <button className="ib" aria-label="Delete item" onClick={() => commit(() => s.items.splice(i, 1))}>✕</button>
                       </div>
-                      {ITEMF[s.type].map(f => <Field key={f[0]} f={f} obj={it} path={'item:' + i} openPicker={openPicker} />)}
+                      {ITEMF[s.type].map(f => <Field key={f[0]} f={f} obj={it} path={'item:' + i} openPicker={openPicker} openEditor={openEditor} />)}
                     </div>
                   ))}
                 </div>
@@ -112,10 +114,11 @@ export default function Step3() {
           <div className="flex items-center justify-between gap-2"><h3 className="m-0">Preview</h3>
             <button className="sm" aria-pressed={!!S.ui.insp.open} onClick={() => commit(S => { S.ui.insp.open = !S.ui.insp.open; })}>{S.ui.insp.open ? 'Hide inspector' : 'Inspector'}</button></div>
           <SizeButtons k="vp" onPick={v => commit(S => { S.ui.vp = v; })} />
-          <Preview vp={S.ui.vp} opt={{ sel: S.ui.sel }} onPart={editPart} hint=" Tap any text or section to style it in the inspector, or a picture to change it." />
+          <Preview vp={S.ui.vp} opt={{ sel: S.ui.sel }} onPart={editPart} hint=" Tap any text or section to style it in the inspector, or a picture to crop and frame it." />
         </div></div>
       </div>
       {S.ui.insp.open && <Inspector openPicker={openPicker} />}
+      <ImageEditor edit={imgEdit} onClose={() => setImgEdit(null)} onReplace={(path, k) => { setImgEdit(null); openPicker(path, k); }} />
       <ImagePicker pick={pick} onClose={() => setPick(null)} />
     </section>
   );
