@@ -14,8 +14,8 @@
       sections: [], footer: { motto: '', text: '' },
       menu: { items: [], cta: { label: 'Contact us', href: '#contact' }, vp: { desktop: { type: 'bar', logo: 'left', sticky: true, cta: false, search: false }, tablet: { type: 'hamburger', logo: 'left', sticky: true, cta: false, search: false }, phone: { type: 'hamburger', logo: 'left', sticky: true, cta: false, search: false } } },
       tpl: { pick: null, view: null, fav: {}, all: false, favOnly: false },
-      notes: [], ai: { endpoint: '' },
-      ui: { vp: 'desktop', tvp: 'desktop', mvp: 'desktop', btab: 'logo', bsrc: 'svg', sel: null, open: false, prompt: {} }
+      notes: [], req: { name: '', email: '' }, ai: { endpoint: '' },
+      ui: { vp: 'desktop', tvp: 'all', mvp: 'desktop', btab: 'logo', bsrc: 'svg', sel: null, open: false, prompt: {} }
     };
   }
 
@@ -83,22 +83,25 @@
   }
 
   /* ---------- preview frames ---------- */
+  var tok = {};
   function frame(stageId, vp, opt) {
     var st = $(stageId); if (!st || st.offsetParent === null) return;
-    var w = VPW[vp], html = Render.page(S, (opt && opt.tpl) || S.tpl.pick || 'news-a', opt);
-    st.innerHTML = '<div class="fw"><div class="fi cq">' + html + '</div></div><p class="vlab"></p>';
-    fitStage(st, vp);
-  }
-  function fitStage(st, vp) {
-    var w = VPW[vp], fw = st.querySelector('.fw'), fi = st.querySelector('.fi'); if (!fi) return;
-    var s = Math.min(1, (st.clientWidth || w) / w);
-    fi.style.width = w + 'px'; fi.style.transform = 'scale(' + s + ')';
-    fw.style.width = Math.round(w * s) + 'px'; fw.style.height = Math.round(fi.offsetHeight * s) + 'px';
-    st.querySelector('.vlab').textContent = VPN[vp] + ' view, ' + w + ' px wide' + (s < 1 ? ', shown at ' + Math.round(s * 100) + '%' : '');
+    var html = Render.page(S, (opt && opt.tpl) || S.tpl.pick || 'news-a', opt), my = tok[stageId] = {};
+    if (!st.querySelector('.shots')) st.innerHTML = '<div class="shots"></div><p class="vlab">Making preview…</p>';
+    st.classList.add('busy');
+    var vps = vp == 'all' ? ['desktop', 'tablet', 'phone'] : [vp];
+    Promise.all(vps.map(function (v) { return Shot.take(html, VPW[v], { scale: v == 'desktop' ? 1 : 2 }); })).then(function (res) {
+      if (tok[stageId] !== my) return;
+      var box = st.querySelector('.shots'); box.className = 'shots' + (vp == 'all' ? ' all' : '');
+      box.innerHTML = res.map(function (r, i) { return '<figure class="shot">' + (vp == 'all' ? '<figcaption>' + VPN[vps[i]] + '</figcaption>' : '') + '<img src="' + r.url + '" alt="' + VPN[vps[i]] + ' screenshot of the whole page" data-i="' + i + '" style="max-width:' + r.w + 'px"></figure>'; }).join('');
+      st._shots = res;
+      st.querySelector('.vlab').textContent = vp == 'all' ? 'Full-page screenshots at 1280, 820 and 390 px wide.' : VPN[vp] + ' screenshot, ' + VPW[vp] + ' px wide, full page.' + (S.step == 3 ? ' Tap a section to edit it.' : '');
+      st.classList.remove('busy');
+    }).catch(function (e) { if (tok[stageId] !== my) return; st.classList.remove('busy'); st.querySelector('.vlab').textContent = 'The preview couldn’t be made (' + (e && e.message || 'unknown problem') + ').'; });
   }
   function vpButtons() {
     Array.prototype.forEach.call(document.querySelectorAll('.vps'), function (el) {
-      var k = el.dataset.vpk; el.innerHTML = Object.keys(VPW).map(function (v) { return '<button data-vp="' + v + '" aria-pressed="' + (S.ui[k] == v) + '">' + VPN[v] + '</button>'; }).join('');
+      var k = el.dataset.vpk; el.innerHTML = (k == 'tvp' ? ['all'] : []).concat(Object.keys(VPW)).map(function (v) { return '<button data-vp="' + v + '" aria-pressed="' + (S.ui[k] == v) + '">' + (v == 'all' ? 'All sizes' : VPN[v]) + '</button>'; }).join('');
     });
   }
 
@@ -273,13 +276,16 @@
     $('tall').checked = S.tpl.all; $('tfav').checked = S.tpl.favOnly;
     $('tgrid').innerHTML = CUR.length ? CUR.map(function (x) {
       var t = x.t, on = S.tpl.pick == t.id;
-      return '<article class="tc' + (on ? ' sel' : '') + (x.c.ok ? '' : ' no') + '"><div class="tw" data-tp="' + t.id + '" role="button" tabindex="0" aria-label="Preview ' + esc(t.name) + '"><div class="tf cq">' + Render.page(S, t.id) + '</div></div><div class="tb"><h4>' + esc(t.name) + (on ? ' <span class="chip on">Picked</span>' : '') + '</h4><p class="mu">' + esc(t.fam.desc) + '</p>' +
+      return '<article class="tc' + (on ? ' sel' : '') + (x.c.ok ? '' : ' no') + '"><div class="tw" data-tp="' + t.id + '" role="button" tabindex="0" aria-label="Preview ' + esc(t.name) + '"><img alt="Screenshot of ' + esc(t.name) + '" data-th="' + t.id + '"></div><div class="tb"><h4>' + esc(t.name) + (on ? ' <span class="chip on">Picked</span>' : '') + '</h4><p class="mu">' + esc(t.fam.desc) + '</p>' +
         (x.c.ok ? '' : '<p class="why">Doesn’t fit: ' + esc(x.c.why.join('; ')) + '.</p>') + '<div class="row"><button data-tp="' + t.id + '">Preview</button><button data-tfav="' + t.id + '" aria-pressed="' + !!S.tpl.fav[t.id] + '">' + (S.tpl.fav[t.id] ? '♥ Favourite' : '♡ Favourite') + '</button></div></div></article>';
     }).join('') : '<p class="mu">No templates to show. Try turning off “Favourites only”, or tick “Show templates that don’t fit”.</p>';
-    fitThumbs();
+    thumbs();
     if (!S.tpl.view) S.tpl.view = S.tpl.pick || (ok[0] || all[0]).t.id;
     r5prev();
-    $('notes').innerHTML = S.notes.map(function (n, i) { return '<li><div><b>' + new Date(n.at).toLocaleString() + '</b> · ' + esc(Render.tpl(n.tpl).name) + '\n' + esc(n.text) + '</div><button class="ib" data-nrm="' + i + '" aria-label="Delete request">✕</button></li>'; }).join('');
+    if (document.activeElement !== $('rname')) $('rname').value = S.req.name; if (document.activeElement !== $('remail')) $('remail').value = S.req.email;
+    $('rtpl').textContent = S.tpl.pick ? 'Template: ' + Render.tpl(S.tpl.pick).name + '.' : 'Pick a template above (Use this template) before requesting development.';
+    $('rhead').hidden = !S.notes.length;
+    $('notes').innerHTML = S.notes.map(function (n, i) { return '<li><div><b>' + esc(n.status || 'Requested') + '</b> · ' + new Date(n.at).toLocaleString() + ' · ' + esc(Render.tpl(n.tpl).name) + (n.name ? ' · ' + esc(n.name) : '') + (n.text ? '\n' + esc(n.text) : '') + '</div><button class="ib" data-nrm="' + i + '" aria-label="Cancel request">✕</button></li>'; }).join('');
   }
   function r5prev() {
     var t = Render.tpl(S.tpl.view), c = Render.compat(t, S), on = S.tpl.pick == t.id;
@@ -287,14 +293,15 @@
     $('tuse').textContent = on ? 'Picked' : 'Use this template'; $('tuse').setAttribute('aria-pressed', on); $('tuse').className = on ? '' : 'pri';
     frame('pv5', S.ui.tvp, { tpl: t.id });
   }
-  function fitThumbs() { Array.prototype.forEach.call(document.querySelectorAll('.tw'), function (w) { w.firstChild.style.transform = 'scale(' + (w.clientWidth / 1280) + ')'; }); }
-  function download(name, text, type) { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: type })); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
-  async function exportHtml() {
-    var css = ''; try { css = await (await fetch('css/site.css')).text(); } catch (e) { }
-    var html = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>' + esc(S.biz.name) + '</title>\n<meta name="description" content="' + esc(S.biz.desc) + '">\n<style>body{margin:0}\n' + css + '</style>\n</head>\n<body>\n<div class="cq">' + Render.page(S, S.tpl.pick || S.tpl.view) + '</div>\n</body>\n</html>\n';
-    download((S.biz.name || 'site').toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.html', html, 'text/html');
+  var thTok;
+  function thumbs() {
+    var my = thTok = {}, list = Array.prototype.slice.call(document.querySelectorAll('img[data-th]'));
+    (function next() {
+      if (thTok !== my || !list.length) return;
+      var im = list.shift();
+      Shot.take(Render.page(S, im.dataset.th), 1280, { maxH: 960, scale: .5, type: 'image/jpeg' }).then(function (r) { if (thTok === my) im.src = r.url; }).catch(function () { }).then(next);
+    })();
   }
-
   /* ---------- shell ---------- */
   function preview() {
     if (S.step == 2) frame('pv2', S.ui.vp);
@@ -317,7 +324,8 @@
 
   /* ---------- events ---------- */
   document.addEventListener('click', function (e) {
-    var a = e.target.closest('.pv a'); if (a) e.preventDefault();
+    var im = e.target.closest('.shot img');
+    if (im && S.step == 3) { var sts = im.closest('.stage'), rr = sts._shots && sts._shots[+im.dataset.i]; if (rr) { var y = e.offsetY / im.clientHeight * rr.h, hit = rr.secs.filter(function (x) { return y >= x.y && y < x.y + x.h; })[0]; if (hit) { S.ui.sel = hit.id; r3list(); r3edit(); preview(); save(); $('sedit').scrollIntoView({ behavior: 'smooth', block: 'start' }); } } return; }
     var t = e.target.closest('button, [data-tp], [data-sec]'); if (!t) return;
     var d = t.dataset, b = S.brand, s;
     if (d.step) return go(+d.step);
@@ -357,10 +365,17 @@
     if (d.tfav) { S.tpl.fav[d.tfav] = !S.tpl.fav[d.tfav]; return renderAll(); }
     if (t.id == 'tuse') { S.tpl.pick = S.tpl.view; return renderAll(); }
     if (t.id == 'tprev' || t.id == 'tnext') { var L = CUR.length ? CUR : Render.TEMPLATES.map(function (t2) { return { t: t2 }; }), ix = L.map(function (x2) { return x2.t.id; }).indexOf(S.tpl.view); ix = (ix + (t.id == 'tnext' ? 1 : -1) + L.length) % L.length; S.tpl.view = L[ix].t.id; r5prev(); return save(); }
-    if (t.id == 'savenote') { var nt = $('note').value.trim(); if (!nt) { $('note').focus(); return; } S.notes.unshift({ id: nid('n'), at: Date.now(), text: nt, tpl: S.tpl.pick || S.tpl.view, status: 'new' }); $('note').value = ''; return renderAll(); }
+    if (t.id == 'savenote') {
+      var er = $('rerr'); er.className = 'errmsg'; var nm = $('rname').value.trim(), em = $('remail').value.trim(), nt = $('note').value.trim();
+      er.hidden = true;
+      if (!S.tpl.pick) { er.hidden = false; er.textContent = 'Pick a template first: preview one above and click “Use this template”.'; return; }
+      if (!nm) { er.hidden = false; er.textContent = 'Enter your name.'; $('rname').focus(); return; }
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { er.hidden = false; er.textContent = 'Enter a valid email address so we can reach you.'; $('remail').focus(); return; }
+      S.req = { name: nm, email: em };
+      S.notes.unshift({ id: nid('n'), at: Date.now(), name: nm, email: em, text: nt, tpl: S.tpl.pick, status: 'Requested', summary: { sections: S.sections.map(function (x) { return x.title || x.type; }), menu: S.menu.items.map(function (m) { return m.label; }) } });
+      $('note').value = ''; renderAll(); er.hidden = false; er.className = 'okmsg'; er.textContent = 'Request saved. We’ll be in touch at ' + em + '.'; return;
+    }
     if (d.nrm) { S.notes.splice(+d.nrm, 1); return renderAll(); }
-    if (t.id == 'dlhtml') return exportHtml();
-    if (t.id == 'dljson') return download('bake-studio-project.json', JSON.stringify(S, null, 1), 'application/json');
     if (t.id == 'reset') { if (confirm('Start over? This clears everything saved in this browser.')) { try { localStorage.removeItem(KEY); } catch (er) { } location.href = location.pathname; } }
   });
   document.addEventListener('keydown', function (e) { var w = e.target.closest && e.target.closest('.tw'); if (w && (e.key == 'Enter' || e.key == ' ')) { e.preventDefault(); w.click(); } });
@@ -388,11 +403,9 @@
         S.brand.opts[t] = S.brand.opts[t].concat(list); if (list[0]) S.brand.pick[t] = list[0].id; renderAll();
       }).catch(function () { alert('That file couldn’t be read as an image.'); });
     }
-    if (el.id == 'upjson') {
-      var fr = new FileReader(); fr.onload = function () { try { var o = JSON.parse(fr.result); if (o.v != 2) throw 0; S = o; renderAll(); } catch (er) { alert('That isn’t a BAKE Studio project file.'); } }; fr.readAsText(el.files[0]);
-    }
+    if (el.id == 'rname' || el.id == 'remail') { S.req[el.id == 'rname' ? 'name' : 'email'] = el.value; save(); }
   });
-  window.addEventListener('resize', function () { clearTimeout(pt); pt = setTimeout(function () { preview(); if (S.step == 5) { fitThumbs(); r5prev(); } }, 150); });
+  
 
   /* ---------- start ---------- */
   S = load() || blank();

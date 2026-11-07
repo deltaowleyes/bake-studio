@@ -163,7 +163,7 @@
 .pv.tf-app .s{padding:calc(var(--sy) * .6) 0}
 .pv.tf-app .s-hero .hx{padding-bottom:20px}
 .pv.tf-app .s-feature .w>.fe,.pv.tf-app .s-list .w,.pv.tf-app .s-text .w{background:var(--card);border:1px solid var(--line);border-radius:max(12px,var(--r));padding:24px;color:var(--ink)}
-.pv.tf-app .s-list .w,.pv.tf-app .s-text .w{max-width:calc(1200px - 2 * var(--pad))}
+.pv.tf-app .s-list .w,.pv.tf-app .s-text .w{max-width:none;margin:0 max(var(--pad),calc((100% - 1200px) / 2 + var(--pad)))}
 .pv.tf-mag h2{font-size:40px}
 .pv.tf-min{--pad:72px}
 .pv.tf-min .hd{border-bottom:0}

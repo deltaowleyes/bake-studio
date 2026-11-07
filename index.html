@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>BAKE Studio</title>
 <meta name="description" content="BAKE Studio: import your site, set your brand, shape your sections and menu, then pick a template that fits.">
-<link rel="stylesheet" href="css/studio.css?v=3">
-<link rel="stylesheet" href="css/site.css?v=3">
+<link rel="stylesheet" href="css/studio.css?v=4">
+<link rel="stylesheet" href="css/site.css?v=4">
 </head>
 <body>
 <header class="top">
@@ -105,19 +105,24 @@
     <div class="card" id="tpc"><div class="bar"><div style="flex:1;min-width:200px"><h3 id="tpn"></h3><p class="mu" id="tpm"></p></div>
       <button id="tprev" aria-label="Previous template">←</button><button id="tnext" aria-label="Next template">→</button><button id="tuse"></button></div>
       <div class="row vps" data-vpk="tvp"></div><div class="stage" id="pv5"></div></div>
-    <div class="card"><h3>Notes for changes</h3><p class="mu">Describe anything you’d like changed. Requests are saved in this browser for now, and will go to your database once Supabase is connected.</p>
-      <label for="note">Your notes</label><textarea id="note" rows="4" placeholder="For example: make the hero image bigger and add our phone number to the menu."></textarea>
-      <div class="row"><button class="pri" id="savenote">Save request</button></div><ul id="notes" class="notes"></ul></div>
-    <div class="card"><h3>Download</h3>
-      <div class="row"><button id="dlhtml">Download page (HTML)</button><button id="dljson">Download project file</button><label class="filebtn">Open project file<input type="file" id="upjson" accept="application/json"></label></div>
-      <p class="mu" style="margin-top:16px"><button id="reset">Start over</button></p></div>
+    <div class="card" id="reqc"><h3>Request development</h3>
+      <p class="mu">Happy with your choices? Send them to us and we’ll build your site. Add anything you’d like changed.</p>
+      <div class="g2"><div><label for="rname">Your name</label><input id="rname" autocomplete="name"></div><div><label for="remail">Email</label><input id="remail" type="email" autocomplete="email"></div></div>
+      <label for="note">Notes for changes (optional)</label><textarea id="note" rows="4" placeholder="For example: make the hero image bigger and add our phone number to the menu."></textarea>
+      <p class="mu" id="rtpl"></p>
+      <p id="rerr" class="errmsg" role="alert" hidden></p>
+      <div class="row"><button class="pri" id="savenote">Request development</button></div>
+      <h4 id="rhead" hidden>Your requests</h4><ul id="notes" class="notes"></ul>
+      <p class="mu small">Requests are saved in this browser for now. Once Supabase is connected, they’ll be sent to us automatically.</p></div>
+    <p class="mu" style="margin-top:16px"><button id="reset">Start over</button></p>
   </section>
 
   <nav class="pager" id="pager"></nav>
 </main>
-<script src="js/art.js?v=3"></script>
-<script src="js/importer.js?v=3"></script>
-<script src="js/render.js?v=3"></script>
-<script src="js/app.js?v=3"></script>
+<script src="js/art.js?v=4"></script>
+<script src="js/importer.js?v=4"></script>
+<script src="js/render.js?v=4"></script>
+<script src="js/shot.js?v=4"></script>
+<script src="js/app.js?v=4"></script>
 </body>
 </html>
