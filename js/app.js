@@ -117,11 +117,45 @@
     Promise.all(vps.map(function (v) { return Shot.take(html, VPW[v], { scale: v == 'desktop' ? 1 : 2 }); })).then(function (res) {
       if (tok[stageId] !== my) return;
       var box = st.querySelector('.shots'); box.className = 'shots' + (vp == 'all' ? ' all' : '');
-      box.innerHTML = res.map(function (r, i) { return '<figure class="shot">' + (vp == 'all' ? '<figcaption>' + VPN[vps[i]] + '</figcaption>' : '') + '<img src="' + r.url + '" alt="' + VPN[vps[i]] + ' screenshot of the whole page" data-i="' + i + '" style="max-width:' + r.w + 'px"></figure>'; }).join('');
+      var edit = stageId == 'pv3';
+      box.innerHTML = res.map(function (r, i) { return '<figure class="shot">' + (vp == 'all' ? '<figcaption>' + VPN[vps[i]] + '</figcaption>' : '') + '<div class="shotw" style="max-width:' + r.w + 'px"><img src="' + r.url + '" alt="' + VPN[vps[i]] + ' screenshot of the whole page" data-i="' + i + '">' + (edit ? overlays(r, i) : '') + '</div></figure>'; }).join('');
       st._shots = res;
-      st.querySelector('.vlab').textContent = vp == 'all' ? 'Full-page screenshots at 1280, 820 and 390 px wide.' : VPN[vp] + ' screenshot, ' + VPW[vp] + ' px wide, full page.' + (S.step == 3 ? ' Tap a section to edit it.' : '');
+      st.querySelector('.vlab').textContent = vp == 'all' ? 'Full-page screenshots at 1280, 820 and 390 px wide.' : VPN[vp] + ' screenshot, ' + VPW[vp] + ' px wide, full page.' + (S.step == 3 ? ' Tap any text or picture to edit it.' : '');
       st.classList.remove('busy');
     }).catch(function (e) { if (tok[stageId] !== my) return; st.classList.remove('busy'); st.querySelector('.vlab').textContent = 'The preview couldn’t be made (' + (e && e.message || 'unknown problem') + ').'; });
+  }
+  /* Clickable overlays: empty, see-through buttons placed from the box map Shot returns.
+     They hold no page code; percentages keep them lined up however wide the picture is drawn. */
+  function partName(b) {
+    if (b.type == 'section') return b.sectionType == 'footer' ? 'Footer' : Render.SECTION_TYPES[b.sectionType] || 'Section';
+    if (b.type == 'item') return 'Item ' + (b.itemIndex + 1);
+    var f = fieldDef(b);
+    return f ? f[1] : b.type == 'image' ? 'Image' : 'Text';
+  }
+  function fieldDef(b) {
+    var list = b.sectionType == 'footer' ? [['motto', 'Motto or tagline'], ['text', 'Bottom line']] : b.itemIndex != null ? ITEMF[b.sectionType] || [] : FIELDS[b.sectionType] || [];
+    return list.filter(function (f) { return f[0] == b.field; })[0];
+  }
+  function overlays(r, i) {
+    var m = r.map; if (!m) return '';
+    function pc(v, t) { return (v / t * 100).toFixed(3) + '%'; }
+    return '<div class="ovl">' + m.boxes.map(function (b, j) {
+      var lab = partName(b), sec = b.type == 'section';
+      return '<button type="button" class="ov ov-' + b.type + (sec && b.sectionId == S.ui.sel ? ' on' : '') + '" data-ov="' + i + ':' + j + '" data-lab="' + esc(lab) + '" aria-label="Edit ' + esc(lab) + (sec ? '' : ' in ' + esc(partName({ type: 'section', sectionType: b.sectionType }))) + '"' + (sec ? '' : ' tabindex="-1"') +
+        ' style="left:' + pc(b.x, m.width) + ';top:' + pc(b.y, m.height) + ';width:' + pc(b.width, m.width) + ';height:' + pc(b.height, m.height) + '"></button>';
+    }).join('') + '</div>';
+  }
+  /* Clicking a part selects its section, then jumps to the matching field (images open the picker) */
+  function editPart(b) {
+    S.ui.sel = b.sectionId; r3list(); r3edit(); preview(); save();
+    var path = b.sectionType == 'footer' ? 'footer' : b.itemIndex != null ? 'item:' + b.itemIndex : 'sec', f = b.field && fieldDef(b);
+    if (f && f[2] == 'pick') return openPicker(path, b.field);
+    var el = f && $('f-' + path.replace(/\W/g, '_') + '-' + b.field);
+    if (!el && b.itemIndex != null) el = document.querySelectorAll('#sedit .item')[b.itemIndex];
+    el = el || $('sedit');
+    el.scrollIntoView({ behavior: 'smooth', block: el.id == 'sedit' ? 'start' : 'center' });
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) el.focus({ preventScroll: true });
+    el.classList.add('flash'); setTimeout(function () { el.classList.remove('flash'); }, 1200);
   }
   function vpButtons() {
     Array.prototype.forEach.call(document.querySelectorAll('.vps'), function (el) {
@@ -399,8 +433,8 @@
 
   /* ---------- events ---------- */
   document.addEventListener('click', function (e) {
-    var im = e.target.closest('.shot img');
-    if (im && S.step == 3) { var sts = im.closest('.stage'), rr = sts._shots && sts._shots[+im.dataset.i]; if (rr) { var y = e.offsetY / im.clientHeight * rr.h, hit = rr.secs.filter(function (x) { return y >= x.y && y < x.y + x.h; })[0]; if (hit) { S.ui.sel = hit.id; r3list(); r3edit(); preview(); save(); $('sedit').scrollIntoView({ behavior: 'smooth', block: 'start' }); } } return; }
+    var ov = e.target.closest('[data-ov]');
+    if (ov) { var oi = ov.dataset.ov.split(':'), rr = ov.closest('.stage')._shots, hit = rr && rr[+oi[0]] && rr[+oi[0]].map.boxes[+oi[1]]; if (hit) editPart(hit); return; }
     var t = e.target.closest('button, [data-tp], [data-sec]'); if (!t) return;
     var d = t.dataset, b = S.brand, s;
     if (d.step) return go(+d.step);
@@ -507,5 +541,5 @@
   S = load() || blank();
   var hm = /#step-(\d)/.exec(location.hash); if (hm) S.step = Math.min(5, Math.max(1, +hm[1]));
   renderAll();
-  window.BAKE = { state: function () { return S; }, useImport: function (r) { applyImport(r); renderAll(); } };
+  window.BAKE = { state: function () { return S; }, maps: function (id) { var st = $(id || 'pv3'); return (st && st._shots || []).map(function (r) { return r.map; }); }, useImport: function (r) { applyImport(r); renderAll(); } };
 })();

@@ -104,7 +104,6 @@ kbd{border:1px solid var(--line);border-radius:4px;padding:0 4px;font-size:13px}
 .shots img{display:block;width:100%;height:auto;margin:0 auto;border:1px solid var(--line);border-radius:10px;background:#fff}
 .shots.all{display:grid;grid-template-columns:5fr 3.2fr 1.6fr;gap:14px;align-items:start}
 .shot{margin:0;min-width:0}.shot figcaption{font-size:13px;color:var(--muted);margin:0 0 6px}
-#s3 .shot img{cursor:pointer}
 .stage.busy .shots{opacity:.55;transition:opacity .2s}
 .stage.busy:before{content:"Updating preview…";position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:2;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:13px}
 .tw img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
@@ -130,3 +129,13 @@ dialog#picker::backdrop{background:rgba(0,0,0,.45)}
 .pk>.mu{height:84px;display:flex;align-items:center;justify-content:center}
 .pk small{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #pbar label{margin-top:0}
+/* step 3: see-through click targets over the preview picture (from Shot's box map) */
+.shotw{position:relative;margin:0 auto}
+.ovl{position:absolute;inset:1px}
+.ov{position:absolute;margin:0;padding:0;min-height:0;border:0;border-radius:4px;background:transparent;box-shadow:none;cursor:pointer}
+.ov:hover,.ov:focus-visible{outline:2px solid var(--acc);outline-offset:0;background:color-mix(in srgb,var(--acc) 10%,transparent)}
+.ov-section:hover{background:transparent;outline-style:dashed}
+.ov:hover::after,.ov:focus-visible::after{content:attr(data-lab);position:absolute;left:0;top:0;transform:translateY(-100%);z-index:3;white-space:nowrap;background:var(--acc);color:var(--onacc);font-size:12px;line-height:1;padding:4px 6px;border-radius:4px 4px 0 0;pointer-events:none}
+.ov-section:hover::after{top:auto;bottom:100%;transform:none}
+.ov:hover{z-index:2}
+.flash{outline:3px solid var(--acc);outline-offset:2px;transition:outline-color 1s}

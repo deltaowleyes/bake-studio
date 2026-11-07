@@ -1,4 +1,4 @@
-/* BAKE Studio: turn a project into a web page (used for previews and the downloaded page) */
+/* BAKE Studio: turn a project into a web page (used for previews; data-sec / data-ii / data-fk attributes let Shot map where things land) */
 var Render = (function () {
   var esc = Art.esc;
   var SECTION_TYPES = {
@@ -72,8 +72,12 @@ var Render = (function () {
     return asset(P, im, 'img');
   }
   function href(u) { return esc(u || '#'); }
-  function btn(text, link, cls) { return text ? '<a class="' + (cls || 'bt') + '" href="' + href(link) + '">' + esc(text) + '</a>' : ''; }
-  function paras(t) { return String(t || '').split(/\n{2,}/).filter(Boolean).map(function (p) { return '<p>' + esc(p) + '</p>'; }).join(''); }
+  /* data-fk marks an editable field so Shot can map where it landed (the key matches the editor's field name) */
+  function fk(k) { return k ? ' data-fk="' + k + '"' : ''; }
+  function tagImg(html, k) { return html ? html.replace(/^<(img|svg)\b/, '<$1' + fk(k || 'image')) : ''; }
+  function btn(text, link, cls, k) { return text ? '<a class="' + (cls || 'bt') + '" href="' + href(link) + '"' + fk(k) + '>' + esc(text) + '</a>' : ''; }
+  function paras(t, k) { return String(t || '').split(/\n{2,}/).filter(Boolean).map(function (p) { return '<p' + fk(k || 'text') + '>' + esc(p) + '</p>'; }).join(''); }
+  function ii(i) { return ' data-ii="' + i + '"'; }
 
   /* ---------- menu ---------- */
   function linkHtml(m) { return '<a href="' + href(m.href) + '">' + esc(m.label) + '</a>'; }
@@ -107,42 +111,42 @@ var Render = (function () {
   }
 
   /* ---------- sections ---------- */
-  function head(s) { return (s.title ? '<div class="sh"><h2>' + esc(s.title) + '</h2>' + (s.moreText ? btn(s.moreText, s.moreLink, 'mo') : '') + '</div>' : '') + (s.text && s.type != 'feature' && s.type != 'text' && s.type != 'cta' ? '<p class="in">' + esc(s.text) + '</p>' : ''); }
+  function head(s) { return (s.title ? '<div class="sh"><h2' + fk('title') + '>' + esc(s.title) + '</h2>' + (s.moreText ? btn(s.moreText, s.moreLink, 'mo', 'moreText') : '') + '</div>' : '') + (s.text && s.type != 'feature' && s.type != 'text' && s.type != 'cta' ? '<p class="in"' + fk('text') + '>' + esc(s.text) + '</p>' : ''); }
   var SEC = {
     hero: function (P, s, f) {
       var lay = s.layout && s.layout != 'auto' ? s.layout : f.hero; if (lay == 'none') lay = 'center';
       var img = s.image === null ? '' : (s.image ? sectionImage(P, s) : asset(P, picked(P, 'hero'), 'hero'));
-      return '<section class="s s-hero hl-' + lay + '"><div class="hx"><div class="ht">' + (s.eyebrow ? '<p class="ey">' + esc(s.eyebrow) + '</p>' : '') + '<h1>' + esc(s.title || P.biz.name) + '</h1>' + paras(s.text) +
-        '<div class="bts">' + btn(s.linkText, s.link) + btn(s.link2Text, s.link2, 'bt bt2') + '</div></div>' + (img ? '<div class="hm">' + img + '</div>' : '') + '</div></section>';
+      return '<section class="s s-hero hl-' + lay + '"><div class="hx"><div class="ht">' + (s.eyebrow ? '<p class="ey"' + fk('eyebrow') + '>' + esc(s.eyebrow) + '</p>' : '') + '<h1' + fk('title') + '>' + esc(s.title || P.biz.name) + '</h1>' + paras(s.text) +
+        '<div class="bts">' + btn(s.linkText, s.link, 'bt', 'linkText') + btn(s.link2Text, s.link2, 'bt bt2', 'link2Text') + '</div></div>' + (img ? '<div class="hm">' + tagImg(img) + '</div>' : '') + '</div></section>';
     },
     tiles: function (P, s, f) {
       var st = s.style && s.style != 'auto' ? s.style : f.tiles, cols = s.cols || 3;
       return '<section class="s s-tiles"><div class="w">' + head(s) + '<div class="tl tl-' + st + ' c' + cols + '">' + (s.items || []).map(function (it, i) {
-        var pic = s.showImg === false && st != 'icons' ? '' : it.image ? '<span class="tim">' + imageRef(P, it.image, i) + '</span>' : (s.showImg || st == 'icons') ? '<span class="tim">' + illAt(P, i) + '</span>' : '';
-        return '<a class="ti" href="' + href(it.link) + '">' + pic + '<span class="tx">' + (it.eyebrow ? '<small class="meta">' + esc(it.eyebrow) + '</small>' : '') + '<h3>' + esc(it.title) + '</h3>' + (it.text ? '<p>' + esc(it.text) + '</p>' : '') + (it.linkText ? '<b>' + esc(it.linkText) + ' →</b>' : '') + '</span></a>';
+        var pic = s.showImg === false && st != 'icons' ? '' : it.image ? '<span class="tim">' + tagImg(imageRef(P, it.image, i)) + '</span>' : (s.showImg || st == 'icons') ? '<span class="tim">' + tagImg(illAt(P, i)) + '</span>' : '';
+        return '<a class="ti" href="' + href(it.link) + '"' + ii(i) + '>' + pic + '<span class="tx">' + (it.eyebrow ? '<small class="meta"' + fk('eyebrow') + '>' + esc(it.eyebrow) + '</small>' : '') + '<h3' + fk('title') + '>' + esc(it.title) + '</h3>' + (it.text ? '<p' + fk('text') + '>' + esc(it.text) + '</p>' : '') + (it.linkText ? '<b' + fk('linkText') + '>' + esc(it.linkText) + ' →</b>' : '') + '</span></a>';
       }).join('') + '</div></div></section>';
     },
     feature: function (P, s, f) {
       var st = s.style && s.style != 'auto' ? s.style : f.feature, img = s.image === null ? '' : (s.image ? sectionImage(P, s) : illAt(P, 1));
-      return '<section class="s s-feature"><div class="w">' + head(s) + '<div class="fe fe-' + st + '">' + (img ? '<div class="fm">' + img + '</div>' : '') + '<div class="fx">' + (s.eyebrow ? '<p class="ey">' + esc(s.eyebrow) + '</p>' : '') +
-        '<h3>' + esc(s.headline || '') + '</h3>' + paras(s.text) + btn(s.linkText, s.link) + '</div></div></div></section>';
+      return '<section class="s s-feature"><div class="w">' + head(s) + '<div class="fe fe-' + st + '">' + (img ? '<div class="fm">' + tagImg(img) + '</div>' : '') + '<div class="fx">' + (s.eyebrow ? '<p class="ey"' + fk('eyebrow') + '>' + esc(s.eyebrow) + '</p>' : '') +
+        '<h3' + fk('headline') + '>' + esc(s.headline || '') + '</h3>' + paras(s.text) + btn(s.linkText, s.link, 'bt', 'linkText') + '</div></div></div></section>';
     },
     list: function (P, s) {
-      return '<section class="s s-list"><div class="w">' + head(s) + '<div class="ls">' + (s.items || []).map(function (it) { return '<div class="lr"><strong>' + esc(it.title) + '</strong>' + (it.text ? '<span>' + esc(it.text) + '</span>' : '') + btn(it.linkText || 'Open', it.link, 'mo') + '</div>'; }).join('') + '</div>' + (s.linkText ? btn(s.linkText, s.link, 'mo') : '') + '</div></section>';
+      return '<section class="s s-list"><div class="w">' + head(s) + '<div class="ls">' + (s.items || []).map(function (it, i) { return '<div class="lr"' + ii(i) + '><strong' + fk('title') + '>' + esc(it.title) + '</strong>' + (it.text ? '<span' + fk('text') + '>' + esc(it.text) + '</span>' : '') + btn(it.linkText || 'Open', it.link, 'mo', 'linkText') + '</div>'; }).join('') + '</div>' + (s.linkText ? btn(s.linkText, s.link, 'mo', 'linkText') : '') + '</div></section>';
     },
     text: function (P, s) {
       var img = s.image ? sectionImage(P, s) : '';
-      return '<section class="s s-text' + (img ? ' wi' : '') + '"><div class="w"><div class="tb">' + (s.title ? '<h2>' + esc(s.title) + '</h2>' : '') + paras(s.text) + btn(s.linkText, s.link, 'mo') + '</div>' + (img ? '<div class="fm">' + img + '</div>' : '') + '</div></section>';
+      return '<section class="s s-text' + (img ? ' wi' : '') + '"><div class="w"><div class="tb">' + (s.title ? '<h2' + fk('title') + '>' + esc(s.title) + '</h2>' : '') + paras(s.text) + btn(s.linkText, s.link, 'mo', 'linkText') + '</div>' + (img ? '<div class="fm">' + tagImg(img) + '</div>' : '') + '</div></section>';
     },
-    stats: function (P, s) { return '<section class="s s-stats"><div class="w">' + head(s) + '<div class="stt">' + (s.items || []).map(function (it) { return '<div><b>' + esc(it.title) + '</b><span>' + esc(it.text) + '</span></div>'; }).join('') + '</div></div></section>'; },
-    gallery: function (P, s) { return '<section class="s s-gallery"><div class="w">' + head(s) + '<div class="gl">' + (s.items || []).map(function (it, i) { return '<figure>' + (it.image ? imageRef(P, it.image, i) : illAt(P, i)) + (it.title ? '<figcaption>' + esc(it.title) + '</figcaption>' : '') + '</figure>'; }).join('') + '</div></div></section>'; },
-    testimonial: function (P, s) { return '<section class="s s-quotes"><div class="w">' + head(s) + '<div class="qs">' + (s.items || []).map(function (it) { return '<blockquote><p>“' + esc(it.text) + '”</p><cite>' + esc(it.title) + '</cite></blockquote>'; }).join('') + '</div></div></section>'; },
-    cta: function (P, s) { return '<section class="s s-cta"><div class="w"><h2>' + esc(s.title) + '</h2>' + paras(s.text) + btn(s.linkText, s.link, 'bt bt3') + '</div></section>'; },
+    stats: function (P, s) { return '<section class="s s-stats"><div class="w">' + head(s) + '<div class="stt">' + (s.items || []).map(function (it, i) { return '<div' + ii(i) + '><b' + fk('title') + '>' + esc(it.title) + '</b><span' + fk('text') + '>' + esc(it.text) + '</span></div>'; }).join('') + '</div></div></section>'; },
+    gallery: function (P, s) { return '<section class="s s-gallery"><div class="w">' + head(s) + '<div class="gl">' + (s.items || []).map(function (it, i) { return '<figure' + ii(i) + '>' + tagImg(it.image ? imageRef(P, it.image, i) : illAt(P, i)) + (it.title ? '<figcaption' + fk('title') + '>' + esc(it.title) + '</figcaption>' : '') + '</figure>'; }).join('') + '</div></div></section>'; },
+    testimonial: function (P, s) { return '<section class="s s-quotes"><div class="w">' + head(s) + '<div class="qs">' + (s.items || []).map(function (it, i) { return '<blockquote' + ii(i) + '><p' + fk('text') + '>“' + esc(it.text) + '”</p><cite' + fk('title') + '>' + esc(it.title) + '</cite></blockquote>'; }).join('') + '</div></div></section>'; },
+    cta: function (P, s) { return '<section class="s s-cta"><div class="w"><h2' + fk('title') + '>' + esc(s.title) + '</h2>' + paras(s.text) + btn(s.linkText, s.link, 'bt bt3', 'linkText') + '</div></section>'; },
     videos: function (P, s, f) {
       var st = s.style && s.style != 'auto' ? s.style : (f.videos || 'grid'), items = (s.items || []).slice(0, 12);
       function card(it, i, big) {
         var th = it.image ? imageRef(P, it.image, i) : illAt(P, i);
-        return '<a class="vi' + (big ? ' big' : '') + '" href="' + href(it.link) + '"><span class="vt">' + th + '<span class="play" aria-hidden="true"></span>' + (it.duration ? '<span class="du">' + esc(it.duration) + '</span>' : '') + '</span><span class="vx">' + (it.eyebrow ? '<small class="meta">' + esc(it.eyebrow) + '</small>' : '') + '<h3>' + esc(it.title) + '</h3>' + (big && it.text ? '<p>' + esc(it.text) + '</p>' : '') + '</span></a>';
+        return '<a class="vi' + (big ? ' big' : '') + '" href="' + href(it.link) + '"' + ii(i) + '><span class="vt">' + tagImg(th) + '<span class="play" aria-hidden="true"></span>' + (it.duration ? '<span class="du"' + fk('duration') + '>' + esc(it.duration) + '</span>' : '') + '</span><span class="vx">' + (it.eyebrow ? '<small class="meta"' + fk('eyebrow') + '>' + esc(it.eyebrow) + '</small>' : '') + '<h3' + fk('title') + '>' + esc(it.title) + '</h3>' + (big && it.text ? '<p' + fk('text') + '>' + esc(it.text) + '</p>' : '') + '</span></a>';
       }
       var body;
       if (st == 'lead' && items.length > 1) body = '<div class="vl-lead">' + card(items[0], 0, true) + '<div class="rail">' + items.slice(1, 5).map(function (it, i) { return card(it, i + 1); }).join('') + '</div></div>' + (items.length > 5 ? '<div class="vg">' + items.slice(5, 9).map(function (it, i) { return card(it, i + 5); }).join('') + '</div>' : '');
@@ -152,20 +156,20 @@ var Render = (function () {
     },
     podcast: function (P, s) {
       return '<section class="s s-podcast"><div class="w">' + head(s) + '<div class="pods">' + (s.items || []).slice(0, 8).map(function (it, i) {
-        return '<div class="pod"><span class="pc">' + (it.image ? imageRef(P, it.image, i) : illAt(P, i + 2)) + '</span><div class="px"><h3>' + esc(it.title) + '</h3>' + (it.text ? '<p>' + esc(it.text) + '</p>' : '') + '<div class="bar"><span class="pb" aria-hidden="true">▶</span><span class="tr"><i style="width:' + (18 + (i * 23) % 60) + '%"></i></span><span class="tm">00:00</span></div></div></div>';
+        return '<div class="pod"' + ii(i) + '><span class="pc">' + tagImg(it.image ? imageRef(P, it.image, i) : illAt(P, i + 2)) + '</span><div class="px"><h3' + fk('title') + '>' + esc(it.title) + '</h3>' + (it.text ? '<p' + fk('text') + '>' + esc(it.text) + '</p>' : '') + '<div class="bar"><span class="pb" aria-hidden="true">▶</span><span class="tr"><i style="width:' + (18 + (i * 23) % 60) + '%"></i></span><span class="tm">00:00</span></div></div></div>';
       }).join('') + '</div></div></section>';
     },
     pagehead: function (P, s) {
       var img = s.image ? imageRef(P, s.image) : '';
-      return '<section class="s s-pagehead' + (img ? ' wi' : '') + '"><div class="w"><p class="crumb">Home <span>/</span> ' + esc(s.title) + '</p><h1>' + esc(s.title) + '</h1>' + paras(s.text) + '</div>' + (img ? '<div class="phm">' + img + '</div>' : '') + '</section>';
+      return '<section class="s s-pagehead' + (img ? ' wi' : '') + '"><div class="w"><p class="crumb">Home <span>/</span> ' + esc(s.title) + '</p><h1' + fk('title') + '>' + esc(s.title) + '</h1>' + paras(s.text) + '</div>' + (img ? '<div class="phm">' + tagImg(img) + '</div>' : '') + '</section>';
     },
-    contact: function (P, s) { return '<section class="s s-contact"><div class="w">' + head(s) + '<dl class="ct">' + (s.items || []).map(function (it) { return '<div><dt>' + esc(it.title) + '</dt><dd>' + (it.link ? '<a href="' + href(it.link) + '">' + esc(it.text || it.link) + '</a>' : esc(it.text)) + '</dd></div>'; }).join('') + '</dl>' + btn(s.linkText, s.link) + '</div></section>'; }
+    contact: function (P, s) { return '<section class="s s-contact"><div class="w">' + head(s) + '<dl class="ct">' + (s.items || []).map(function (it, i) { return '<div' + ii(i) + '><dt' + fk('title') + '>' + esc(it.title) + '</dt><dd' + fk('text') + '>' + (it.link ? '<a href="' + href(it.link) + '">' + esc(it.text || it.link) + '</a>' : esc(it.text)) + '</dd></div>'; }).join('') + '</dl>' + btn(s.linkText, s.link, 'bt', 'linkText') + '</div></section>'; }
   };
 
   function footer(P) {
     var items = P.menu.items, links = [];
     items.forEach(function (m) { if (m.children && m.children.length) links = links.concat(m.children); else links.push(m); });
-    return '<footer class="ft"><div class="w"><div class="fb">' + asset(P, picked(P, 'logo'), 'logo', 36) + (P.footer.motto ? '<p class="mt">' + esc(P.footer.motto) + '</p>' : '') + '</div><nav>' + links.slice(0, 12).map(linkHtml).join('') + '</nav><p class="cp">' + esc(P.footer.text || ('© ' + P.biz.name)) + '</p></div></footer>';
+    return '<footer class="ft" data-sec="footer" data-type="footer" data-si="-1"><div class="w"><div class="fb">' + asset(P, picked(P, 'logo'), 'logo', 36) + (P.footer.motto ? '<p class="mt"' + fk('motto') + '>' + esc(P.footer.motto) + '</p>' : '') + '</div><nav>' + links.slice(0, 12).map(linkHtml).join('') + '</nav><p class="cp"' + fk('text') + '>' + esc(P.footer.text || ('© ' + P.biz.name)) + '</p></div></footer>';
   }
 
   function page(P, tplId, opt) {
@@ -176,7 +180,7 @@ var Render = (function () {
       var h = (SEC[s.type] || SEC.text)(P, s, f), bg = s.bg && s.bg != 'auto' ? s.bg : (v.band != 'none' && i % 2 == 1 && s.type != 'hero' ? v.band : 'default');
       if (f.bands && s.type == 'cta') bg = 'acc';
       if (s.type == 'pagehead' && (!s.bg || s.bg == 'auto')) bg = f.k == 'bold' || f.k == 'portal' ? 'ink' : 'soft';
-      return h.replace('<section class="s ', '<section data-sec="' + s.id + '" class="s bg-' + bg + ' al-' + (s.align || 'auto') + (opt.sel == s.id ? ' sel' : '') + ' ');
+      return h.replace('<section class="s ', '<section data-sec="' + s.id + '" data-type="' + s.type + '" data-si="' + i + '" class="s bg-' + bg + ' al-' + (s.align || 'auto') + (opt.sel == s.id ? ' sel' : '') + ' ');
     }).join('');
     var mv = opt.openMenu;
     return '<div class="pv tf-' + f.k + ' tv-' + v.k + ' dn-' + v.dens + '" style="' + vars + '">' +

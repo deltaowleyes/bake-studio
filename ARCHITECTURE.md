@@ -33,11 +33,11 @@ bake-studio/
     ├── art.js          Art       palettes, font pairs, colour maths, SVG logo/hero/illustration generators
     ├── importer.js     Importer  fetch + parse an existing page into a project-shaped result
     ├── render.js       Render    project + template → page HTML string; templates and compatibility
-    ├── shot.js         Shot      page HTML → full-page image (SVG foreignObject → canvas → blob URL)
+    ├── shot.js         Shot      page HTML → full-page image (SVG foreignObject → canvas → blob URL) + box map
     └── app.js          (IIFE)    state, saving, the five steps' UI and all event handling; exposes window.BAKE
 ```
 
-**Loading:** script tags carry a cache-busting query (`?v=8` at the time of writing). Bump it in `index.html` whenever JS or CSS changes, or browsers may keep old files for up to 10 minutes.
+**Loading:** script tags carry a cache-busting query (`?v=9` at the time of writing). Bump it in `index.html` whenever JS or CSS changes, or browsers may keep old files for up to 10 minutes.
 
 **Module dependencies:** `importer` → `art` (colour maths); `render` → `art`; `shot` → (fetches `css/site.css`); `app` → all four.
 
@@ -177,7 +177,9 @@ Every section also takes `bg` (`auto`, `default`, `soft`, `ink`, `acc`) and `ali
 - **The list** works on `SEC()` (the current page's sections): select, move up/down, delete, or add a section of any type after the selected one (`defaultSection`).
 - **The editor** is built from `FIELDS[type]` + background/alignment + `ITEMF[type]` for items (add, move, delete). Inputs update `S` straight away and refresh the preview after 120 ms.
 - **Image picker** (`<dialog id="picker">`): no image, the hero, illustrations 1–3, uploads (or upload a new one), and every `lib` image (searchable). The choice is stored as an `ImageRef`.
-- **Clicking the preview screenshot** finds the section under the click (using section positions recorded by `Shot`) and selects it.
+- **Click-to-edit overlays:** the step 3 preview (`#pv3`) draws one empty, see-through `<button class="ov">` per box in the screenshot's box map (§5.1), positioned in percentages so they stay aligned at any width. They contain no page code. Hover shows a label ("Headline", "Item 2"…).
+  - Clicking a **section** selects it. Clicking an **item**, **text** or **image** selects its section, then scrolls to and focuses the matching editor field (`f-{path}-{field}`), or opens the image picker for image fields.
+  - Section boxes are keyboard-focusable; inner boxes are `tabindex=-1` (the section list is the keyboard route).
 
 ### Step 4: Menu
 - Each screen size has its own `MenuConfig`. Allowed types: desktop `bar`, `mega`, `split`, `hamburger`; tablet `bar`, `split`, `hamburger`, `bottom`; phone `hamburger`, `bottom`. Options: logo position, sticky header, search, show button. A button copies the current style to the other sizes where it's allowed.
@@ -216,7 +218,7 @@ S + template id + {pageId, sel, openMenu}
  1. Put the HTML in a hidden off-screen .cq box at the target width (so container queries apply).
  2. Turn every <img> into a data URL (fetch → FileReader). Images that can't be fetched are dropped.
     `loading="lazy"` is removed first, because lazy images never load off-screen.
- 3. Measure the full height and each [data-sec] position (used for click-to-select).
+ 3. Measure the full height and build the box map (sections, items, text, images; see §5.1).
  4. Serialize to XHTML and wrap it with the contents of css/site.css in <svg><foreignObject>.
  5. Draw it on a canvas (scale 1 for desktop, 2 for tablet/phone, 0.5 for thumbnails) → blob URL.
  6. Results are cached by width + options + HTML (last 80).
@@ -225,6 +227,22 @@ S + template id + {pageId, sel, openMenu}
 - **How template differences work:** in `render.js`, each family has defaults for `hero` layout, `tiles` style, `feature` style and `videos` layout (`lead`, `grid` or `row`). In `site.css`, `.tf-{family}` rules adjust typography, headers, bands and panels. A section's own `layout` or `style` field overrides the family default.
 - **Menus** are plain `<details>`/`<summary>` HTML (dropdowns, mega panel, drawer, bottom-bar "More"), so they need no JavaScript.
 - **The site's colours** for the generated page are derived from the palette: text on accent, text on dark, lines, muted text and card background are all computed with `Art.mix` and `Art.onColor`.
+
+### 5.1 Box map
+
+While the page is still off-screen, `Shot` measures every tagged element and returns `map` with the picture:
+
+```js
+map = { width, height,             // CSS px of the render width (not the pixel scale), clipped to the picture
+  boxes: [{ id, type, sectionIndex, x, y, width, height,
+            sectionId, sectionType, itemIndex, field }] }
+```
+
+- `type`: `section`, `item`, `text` or `image`. Boxes are ordered sections → items → text/images, so later ones sit on top.
+- `sectionIndex`: the section's position on the page; the footer is `-1` (`sectionId: 'footer'`).
+- `id`: `sectionId[:itemIndex][:field]`, with `:2`, `:3`… for repeats (for example several paragraphs of one text field).
+- The tags come from `render.js`: `data-sec`, `data-type`, `data-si` on each section (and the footer), `data-ii` on each item, `data-fk="{field}"` on each editable text or image. Field names match `FIELDS` / `ITEMF` in `app.js`.
+- Test hook: `BAKE.maps('pv3')` returns the maps of a stage's current screenshots.
 
 ## 6. Importer logic (`Importer.analyse(html, url, log, {inner})`)
 
@@ -251,7 +269,7 @@ S + template id + {pageId, sel, openMenu}
 - **Full redraw:** `renderAll()` → shows the active step, runs that step's draw function (`r1`–`r5`), refreshes previews, draws the Back/Next bar, then `save()`. Most clicks end in `renderAll()`.
 - **Typing doesn't rebuild the form,** so focus is kept: it updates `S`, then `softPreview()` refreshes the preview (and the step 3 list) after 120 ms.
 - **Previews:** `frame(stageId, vp, opt)` → `Shot.take` → swaps in the image. Each stage has a token, so slow results that arrive late are ignored.
-- **Test hook:** `window.BAKE = { state(), useImport(result) }`.
+- **Test hook:** `window.BAKE = { state(), maps(stageId), useImport(result) }`.
 
 ## 8. Known limits and what Supabase will add
 
