@@ -81,7 +81,7 @@
     S.biz.name = r.name; S.biz.desc = r.desc;
     var b = S.brand; S.lib = []; addLib(r.lib);
     b.opts = { logo: [], hero: [], ill: [] }; b.pick = {}; b.star = {};
-    var nm = r.name.toLowerCase(); r.lib.filter(function (l) { return l.logo; }).sort(function (a, b) { return (b.label.toLowerCase().indexOf(nm) >= 0) - (a.label.toLowerCase().indexOf(nm) >= 0); }).slice(0, 4).forEach(function (l) { b.opts.logo.push({ id: nid('o'), kind: 'img', src: l.src, from: 'site', label: l.label }); });
+    var nm = r.name.toLowerCase(); r.lib.filter(function (l) { return l.logo || l.label.toLowerCase().indexOf(nm) >= 0; }).sort(function (a, b) { return (b.label.toLowerCase().indexOf(nm) >= 0) - (a.label.toLowerCase().indexOf(nm) >= 0); }).slice(0, 4).forEach(function (l) { b.opts.logo.push({ id: nid('o'), kind: 'img', src: l.src, from: 'site', label: l.label }); });
     r.lib.filter(function (l) { return !l.logo; }).slice(0, 3).forEach(function (l) { b.opts.hero.push({ id: nid('o'), kind: 'img', src: l.src, from: 'site', label: l.label }); });
     ['logo', 'hero', 'ill'].forEach(function (t) { genSvg(t); if (b.opts[t][0]) b.pick[t] = b.opts[t][0].id; });
     if (r.colours) { b.palFound = r.colours.pal; b.pal = Object.assign({}, r.colours.pal); }

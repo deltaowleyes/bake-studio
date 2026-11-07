@@ -6,7 +6,7 @@ var Importer = (function () {
   function abs(href, base) { try { return new URL(href, base).href; } catch (e) { return href || ''; } }
   function linkText(a) { return txt(a).replace(/\s*[→›»]\s*$/, '').trim(); }
   function pos(a, b) { return a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1; }
-  var JUNK = /play-button|play_button|overlay|spinner|loader|pixel|1x1|blank\.gif|spacer|doubleclick|googlesyndication|facebook\.com\/tr|gravatar|emoji|placeholder|lazy[-_]?load\.|transparent\.(gif|png)/i;
+  var JUNK = /advert|728x90|300x250|banner-ad|\/ads?\/|play-button|play_button|overlay|spinner|loader|pixel|1x1|blank\.gif|spacer|doubleclick|googlesyndication|facebook\.com\/tr|gravatar|emoji|placeholder|lazy[-_]?load\.|transparent\.(gif|png)/i;
   var VIDEO_HREF = /\/videos?\/|[?&]v=|\/watch|youtu\.?be|vimeo\.com|\/tv\/|\/episodes?\//i;
   var AUDIO_SRC = /libsyn|spotify|podcasts\.apple|soundcloud|anchor\.fm|buzzsprout|podbean|megaphone|simplecast|transistor\.fm/i;
 
@@ -53,7 +53,7 @@ var Importer = (function () {
     A(doc.querySelectorAll('img')).forEach(function (img) {
       var s = imgSrc(img, base); if (!s) return;
       var hint = (s + ' ' + (img.getAttribute('alt') || '') + ' ' + img.className + ' ' + (img.id || '')).toLowerCase();
-      var logoish = /logo|brand|wordmark/.test(hint) || !!img.closest('header, [class*="logo"], [class*="brand"], [id*="logo"], .site-title, .navbar-brand');
+      var logoish = /logo|wordmark/.test(hint) || !!img.closest('header .site-branding, header [class*="logo"], [class*="site-logo"], [class*="custom-logo"], [id*="logo"], .site-title, .navbar-brand, header > a, header > div > a:first-child');
       add(s, img.getAttribute('alt'), logoish);
     });
     A(doc.querySelectorAll('[style*="url("], [data-bg], [data-background], [data-bg-src], [data-background-image]')).forEach(function (el) { add(bgUrl(el, base), 'Background image'); });
@@ -93,7 +93,7 @@ var Importer = (function () {
       A(nav.querySelectorAll('li')).filter(function (li) { return !li.parentElement.closest('li'); }).forEach(function (li) {
         if (li.closest('details')) return;
         var sub = li.querySelector('ul'), a = A(li.querySelectorAll('a')).filter(function (x) { return !sub || !sub.contains(x); })[0];
-        if (sub && a) { var g = { id: id('g'), label: linkText(a), href: abs(a.getAttribute('href'), base), children: [] }; A(sub.querySelectorAll('a')).slice(0, 20).forEach(function (x) { add(g.children, x); }); if (g.children.length) items.push(g); else add(items, a); }
+        if (sub && a) { var gh = a.getAttribute('href') || ''; var g = { id: id('g'), label: linkText(a), href: /^(#|null|javascript)/.test(gh) ? '' : abs(gh, base), children: [] }; A(sub.querySelectorAll('a')).slice(0, 20).forEach(function (x) { add(g.children, x); }); if (g.children.length) items.push(g); else add(items, a); }
         else if (a) add(items, a);
       });
       if (!nav.querySelector('li')) A(nav.querySelectorAll('a')).forEach(function (a) { if (!a.closest('details') && txt(a)) add(items, a); });
@@ -102,7 +102,7 @@ var Importer = (function () {
   }
   function internalPages(items, base) {
     var host = ''; try { host = new URL(base).host.replace(/^www\./, ''); } catch (e) { }
-    var out = [], seen = {}; function push(m) { try { var u = new URL(m.href); if (u.host.replace(/^www\./, '') != host || /^mailto|tel/.test(u.protocol)) return; var p = u.pathname.replace(/\/$/, '') || '/'; if (p == '/' || seen[p] || /\.(pdf|jpg|png|zip)$/i.test(p)) return; seen[p] = 1; out.push({ name: m.label, url: u.origin + u.pathname }); } catch (e) { } }
+    var out = [], seen = {}; function push(m) { try { if (/\/(null|undefined)\/?$|#$/.test(m.href)) return; var u = new URL(m.href); if (u.host.replace(/^www\./, '') != host || /^mailto|tel/.test(u.protocol)) return; var p = u.pathname.replace(/\/$/, '') || '/'; if (p == '/' || seen[p] || /\.(pdf|jpg|png|zip)$/i.test(p)) return; seen[p] = 1; out.push({ name: m.label, url: u.origin + u.pathname }); } catch (e) { } }
     items.forEach(function (m) { if (m.href) push(m); (m.children || []).forEach(push); });
     return out.slice(0, 24);
   }
@@ -117,6 +117,7 @@ var Importer = (function () {
     var paras = A(el.querySelectorAll('p')).map(txt).filter(function (t) { return t && t != title && t.length > 15; });
     if (!title && paras.length) title = paras.shift();
     if (!title) title = ((el.querySelector('img') || {}).alt || '');
+    if (/^(see|read|view|learn|watch|listen) (more|all|now)$|^more$|^view all/i.test(title)) title = paras.shift() || ((el.querySelector('img') || {}).alt || '');
     var meta = txt(el.querySelector('time, .date, [class*="date"], [class*="categor"], .meta, [class*="meta"], [class*="kicker"], [class*="eyebrow"]'));
     var dur = A(el.querySelectorAll('span, small, div, time, b')).map(function (e) { return e.children.length ? '' : txt(e); }).filter(function (t) { return /^\d{1,2}:\d{2}(:\d{2})?$/.test(t); })[0] || '';
     var href = a ? abs(a.getAttribute('href'), base) : '';
@@ -169,7 +170,7 @@ var Importer = (function () {
     raw.forEach(function (g) { if (!g.merged && !g.wrapper && !keep.some(function (k) { return k.c === g.c; })) keep.push(g); });
     keep = keep.filter(function (g) { return !keep.some(function (o) { return o !== g && o.items.some(function (it) { return it.contains(g.c); }); }); });
     return keep.map(function (g) {
-      var seen = {}, items = g.items.map(function (el) { return cardItem(el, base); }).filter(function (it) { var k = it.link || it.title; if (!it.title || seen[k]) return false; seen[k] = 1; return true; });
+      var seen = {}, items = g.items.map(function (el) { return cardItem(el, base); }).filter(function (it) { var k = it.link || it.title; if (!it.title || /^(see|read|view|learn|watch|listen) (more|all|now)$|^more$/i.test(it.title) || seen[k]) return false; seen[k] = 1; return true; });
       return { el: g.c, title: groupTitle(g.c, g.items), items: items.slice(0, 12), count: items.length };
     }).filter(function (g) { var anchors = g.items.filter(function (i) { return /#[\w-]*$/.test(i.link) && i.link.split('#')[0] == String(base).split('#')[0]; }).length; return g.items.length >= 3 && anchors < g.items.length * .5; });
   }
