@@ -128,8 +128,11 @@ var Importer = (function () {
     var own = A(c.querySelectorAll('h1, h2, h3, h4')).filter(function (h) { return !items.some(function (i) { return i.contains(h); }); })[0];
     if (own && txt(own).length < 70) return txt(own);
     for (var t = c, k = 0; t && k < 6; t = t.parentElement, k++) {
-      if (t.id) { var tab = t.ownerDocument.querySelector('[aria-controls="' + t.id + '"], a[href="#' + t.id + '"]'); if (tab && txt(tab) && txt(tab).length < 50) return txt(tab); }
-      var lb = t.getAttribute && t.getAttribute('aria-labelledby'); if (lb) { var le = t.ownerDocument.getElementById(lb); if (le && txt(le).length < 50) return txt(le); }
+      if (t.id) {
+        var tabs = A(t.ownerDocument.querySelectorAll('[aria-controls="' + t.id + '"], a[href="#' + t.id + '"]')).filter(function (x) { return (x.getAttribute('role') == 'tab' || x.closest('[role="tablist"], .nav-tabs, .nav-pills, [class*="tab"]')) && /\w{2}/.test(txt(x)) && !/skip|previous|next/i.test(txt(x)); });
+        if (tabs[0] && txt(tabs[0]).length < 50) return txt(tabs[0]);
+      }
+      var lb = t.getAttribute && t.getAttribute('aria-labelledby'); if (lb) { var le = t.ownerDocument.getElementById(lb); if (le && (/^H[1-5]$/.test(le.tagName) || le.getAttribute('role') == 'tab') && /\w{2}/.test(txt(le)) && txt(le).length < 50) return txt(le); }
     }
     for (var el = c, d = 0; el && d < 6; el = el.parentElement, d++) {
       if (el.getAttribute && el.getAttribute('aria-label') && !/carousel|slider/i.test(el.getAttribute('aria-label'))) return el.getAttribute('aria-label');
