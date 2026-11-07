@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BAKE Studio</title>
+<meta name="description" content="BAKE Studio: build your brand and preview your website in minutes.">
+<style>
+:root{--bg:#FAF9F6;--panel:#FFFFFF;--text:#1D1C1A;--muted:#5B5851;--line:#CFCABF;--acc:#2F5D62;--onacc:#FFFFFF;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15181A;--panel:#1E2326;--text:#ECEAE4;--muted:#AEB2AE;--line:#3E4649;--acc:#7FC3C8;--onacc:#0E1A1C;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#15181A;--panel:#1E2326;--text:#ECEAE4;--muted:#AEB2AE;--line:#3E4649;--acc:#7FC3C8;--onacc:#0E1A1C;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1200px;margin:0 auto;padding:20px}
+h1{font-size:26px;margin:0 0 4px}h2{font-size:19px;margin:0 0 12px}
+.mu{color:var(--muted);font-size:14px;margin:6px 0 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-top:16px}
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+label{display:block;font-size:14px;color:var(--muted);margin:0 0 4px}
+input,textarea{width:100%;box-sizing:border-box;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text)}
+button{font:inherit;cursor:pointer;min-height:44px;padding:0 16px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+button[aria-pressed="true"]{background:var(--acc);color:var(--onacc);border-color:var(--acc)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:14px}
+.opt{border:2px solid var(--line);border-radius:10px;padding:8px}
+.opt.sel{border-color:var(--acc)}
+.thumb{height:130px;display:flex;align-items:center;justify-content:center;border-radius:6px;overflow:hidden;padding:8px;box-sizing:border-box}
+.thumb.full{padding:0}
+.thumb svg{max-width:100%;max-height:100%}
+.thumb.full svg{width:100%;height:100%;max-height:none}
+.opt .row{margin-top:8px}.opt button{flex:1;padding:0 8px}
+.fw{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:0 auto;background:#FFFFFF}
+.fi{transform-origin:0 0;container-type:inline-size}
+.pv{background:var(--b);color:var(--i);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.pv header{display:flex;justify-content:space-between;align-items:center;padding:24px 56px;border-bottom:2px solid var(--i)}
+.pv nav{display:flex;gap:24px;font-size:15px}
+.pv .mn{display:none;border:1.5px solid var(--i);padding:6px 12px;font-size:14px}
+.pv h1{font-family:var(--hf);font-weight:var(--hw);font-size:54px;line-height:1.05;margin:0 0 16px}
+.pv p{font-size:18px;line-height:1.55;margin:0 0 24px}
+.pv .bt{display:inline-block;background:var(--a);color:var(--oa);padding:12px 22px;font-weight:600}
+.pv .hs{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:48px 56px;align-items:center}
+.pv .im{aspect-ratio:16/10;overflow:hidden;border-radius:6px}
+.pv .im svg{display:block;width:100%;height:100%}
+.pv .fb{position:relative;min-height:440px}
+.pv .fb .im{position:absolute;inset:0;aspect-ratio:auto;border-radius:0}
+.pv .ov{position:relative;padding:72px 56px}
+.pv .bx{background:var(--b);padding:32px;display:inline-block;max-width:540px}
+.pv .bx p{margin-bottom:20px}
+.pv .he{padding:48px 56px 24px;max-width:900px}
+.pv .he+.im{margin:0 56px 24px;aspect-ratio:21/9}
+.pv .cs{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:24px 56px 48px}
+.pv .cd{border-top:3px solid var(--i);padding-top:16px}
+.pv .ic{background:var(--s);height:150px;border-radius:6px;overflow:hidden;margin-bottom:12px}
+.pv .ic svg{display:block;width:100%;height:100%}
+.pv h3{font-family:var(--hf);font-size:22px;margin:0 0 6px}
+.pv .cd p{font-size:16px;margin:0}
+.pv footer{padding:20px 56px;border-top:2px solid var(--i);font-size:14px}
+@container (max-width:900px){.pv header{padding:20px 32px}.pv nav{display:none}.pv .mn{display:block}.pv .hs{grid-template-columns:1fr;padding:32px}.pv h1{font-size:42px}.pv .cs{padding:24px 32px 40px}.pv .he{padding:32px 32px 20px}.pv .he+.im{margin:0 32px 24px}.pv .ov{padding:48px 32px}.pv footer{padding:20px 32px}}
+@container (max-width:600px){.pv header{padding:16px 20px}.pv h1{font-size:32px}.pv .hs,.pv .he{padding:24px 20px}.pv .cs{grid-template-columns:1fr;padding:20px 20px 32px}.pv .ov{padding:32px 20px}.pv .bx{padding:24px}.pv .he+.im{margin:0 20px 20px}.pv footer{padding:16px 20px}.pv p{font-size:16px}}
+</style>
+</head>
+<body>
+<main>
+<h1>BAKE Studio</h1>
+<p class="mu">Step: Brand. This is a prototype with generated placeholder artwork.</p>
+<section class="card"><h2>Your business</h2>
+<div class="g2"><div><label for="nm">Business name</label><input id="nm"></div><div><label for="ds">Short description</label><input id="ds"></div></div></section>
+<section class="card"><h2>Brand options</h2>
+<div class="row" id="tabs" role="group" aria-label="Asset type" style="margin-top:0"></div>
+<div style="margin-top:14px"><label for="pr">Prompt</label><textarea id="pr" rows="2"></textarea>
+<p class="mu">Generate makes placeholder options here. The full studio would send this prompt to an image service. Starred and in-use options stay when you generate again.</p></div>
+<div class="row"><button id="gn">Generate more</button><button id="fo" aria-pressed="false">Starred only</button></div>
+<div id="gd" class="grid"></div></section>
+<section class="card"><h2>Live preview</h2>
+<div class="row" id="lays" style="margin-top:0" role="group" aria-label="Layout"></div>
+<div class="row" id="vps" role="group" aria-label="Screen size"></div>
+<p class="mu">Your in-use logo sets the site’s colors and heading font. Starred illustrations fill the cards.</p>
+<div id="pw" style="margin-top:12px"><div id="fw" class="fw"><div id="fi" class="fi"></div></div></div>
+<p id="vl" class="mu"></p></section>
+</main>
+<script>
+var $=function(i){return document.getElementById(i)},uid=0;
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function rng(s){return function(){s|=0;s=s+0x6D2B79F5|0;var t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function lum(h){var n=parseInt(h.slice(1),16);return((n>>16&255)*299+(n>>8&255)*587+(n&255)*114)/1000}
+function oc(h){return lum(h)>150?'#111111':'#FFFFFF'}
+var PAL=[['#FAF7F0','#1B1A17','#A63A1E','#EADFCB'],['#F6F4EE','#0F2F4A','#A8481F','#D9E4EC'],['#F3F1E7','#1F3D2B','#C98A1B','#DDE6D0'],['#101820','#F2EEE3','#F2B544','#1E2C38'],['#FFFFFF','#0F2A43','#C93E22','#DCE8F2'],['#F7F5F0','#222222','#2F6F6B','#DCE9E6'],['#F5EEE4','#2B1B12','#8A3B12','#EBD7BE'],['#F2F7F8','#0B2E3A','#0A7D8C','#CFE6EA']];
+var FONTS=[['Georgia,"Times New Roman",serif',700],['"Helvetica Neue",Arial,sans-serif',800],['"Trebuchet MS",Verdana,sans-serif',700],['"Palatino Linotype",Palatino,serif',700]];
+var MK=['<circle cx="15" cy="25" r="12" fill="none" stroke="@i" stroke-width="4"/><circle cx="35" cy="25" r="12" fill="none" stroke="@i" stroke-width="4"/><circle cx="15" cy="25" r="5" fill="@a"/><circle cx="35" cy="25" r="5" fill="@a"/>','<path d="M25 8V26M25 26L10 43M25 26L40 43" fill="none" stroke="@i" stroke-width="5" stroke-linecap="round"/><circle cx="25" cy="8" r="5" fill="@a"/>','<rect x="10" y="14" width="6" height="30" rx="3" fill="@i"/><rect x="22" y="6" width="6" height="38" rx="3" fill="@i"/><rect x="34" y="18" width="6" height="26" rx="3" fill="@i"/><circle cx="25" cy="6" r="5" fill="@a"/>','<path d="M6 32A19 19 0 0 1 44 32Z" fill="@a"/><rect x="4" y="37" width="42" height="5" rx="2" fill="@i"/>','<polygon points="25,6 40,26 10,26" fill="@a"/><polygon points="25,20 44,44 6,44" fill="@i"/>','<path d="M5 18Q15 8 25 18T45 18" fill="none" stroke="@i" stroke-width="4" stroke-linecap="round"/><path d="M5 31Q15 21 25 31T45 31" fill="none" stroke="@a" stroke-width="4" stroke-linecap="round"/><circle cx="25" cy="42" r="3" fill="@i"/>'];
+function logo(p,name,h){var P=PAL[p.pal],f=FONTS[p.font],t=p.up?name.toUpperCase():name,fs=p.up?22:28,w=Math.max(t.length,3)*fs*0.62+16,m=MK[p.mark].replace(/@i/g,P[1]).replace(/@a/g,P[2]);
+var tx=' font-family=\''+f[0]+'\' font-weight="'+f[1]+'" font-size="'+fs+'" fill="'+P[1]+'"',lab=' role="img" aria-label="'+esc(name)+' logo"';
+if(p.lay==0)return '<svg viewBox="0 0 '+(84+w)+' 80" height="'+h+'"'+lab+'><g transform="translate(8,8) scale(1.28)">'+m+'</g><text x="84" y="49"'+tx+'>'+esc(t)+'</text></svg>';
+var W=Math.max(120,w);return '<svg viewBox="0 0 '+W+' 120" height="'+h+'"'+lab+'><g transform="translate('+(W/2-32)+',2) scale(1.28)">'+m+'</g><text x="'+W/2+'" y="108" text-anchor="middle"'+tx+'>'+esc(t)+'</text></svg>'}
+function hero(p){var P=PAL[p.pal],r=rng(p.s),s='<rect width="1600" height="900" fill="'+P[3]+'"/>',i,y;
+if(p.k==0){s+='<circle cx="'+(300+r()*1000)+'" cy="'+(200+r()*150)+'" r="'+(80+r()*60)+'" fill="'+P[2]+'"/>';for(i=0;i<3;i++){y=430+i*150;s+='<path d="M0 '+y+'C400 '+(y-120+r()*160)+' 900 '+(y+100-r()*160)+' 1600 '+(y-40+r()*80)+'L1600 900L0 900Z" fill="'+P[1]+'" fill-opacity="'+[.3,.6,1][i]+'"/>'}}
+else if(p.k==1){s+='<circle cx="'+(250+r()*1100)+'" cy="230" r="110" fill="'+P[2]+'"/>';for(i=0;i<3;i++){var x=r()*1000;s+='<polygon points="'+x+',900 '+(x+350+r()*150)+','+(280+i*110+r()*80)+' '+(x+800)+',900" fill="'+P[1]+'" fill-opacity="'+[.3,.6,1][i]+'"/>'}}
+else if(p.k==2){for(i=0;i<6;i++){y=250+i*110;s+='<path d="M0 '+y+'Q200 '+(y-70)+' 400 '+y+'T800 '+y+'T1200 '+y+'T1600 '+y+'V900H0Z" fill="'+(i%2?P[2]:P[1])+'" fill-opacity="'+(.25+i*.15)+'"/>'}}
+else{s+='<circle cx="800" cy="470" r="270" fill="'+P[2]+'"/>';for(i=0;i<6;i++)s+='<rect x="500" y="'+(430+i*42)+'" width="600" height="'+(6+i*5)+'" fill="'+P[3]+'"/>';s+='<rect y="690" width="1600" height="210" fill="'+P[1]+'"/>'}
+return '<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Hero image option">'+s+'</svg>'}
+function ill(p){var P=PAL[p.pal],r=rng(p.s),s='<rect width="200" height="200" fill="'+P[3]+'"/>',i,j;
+if(p.k==0){for(i=0;i<3;i++){var h=60+r()*60;s+='<path d="M'+(24+i*52)+' 180V'+(180-h)+'a24 24 0 0 1 48 0V180Z" fill="'+(i==1?P[2]:P[1])+'"/>'}}
+else if(p.k==1){s+='<circle cx="100" cy="'+(70+r()*20)+'" r="34" fill="'+P[2]+'"/><path d="M0 150Q60 '+(110+r()*20)+' 120 150T200 140V200H0Z" fill="'+P[1]+'" fill-opacity=".55"/><path d="M0 175Q70 '+(140+r()*20)+' 140 172T200 165V200H0Z" fill="'+P[1]+'"/>'}
+else if(p.k==2){for(i=0;i<5;i++)for(j=0;j<5;j++)s+='<circle cx="'+(30+j*35)+'" cy="'+(30+i*35)+'" r="'+(4+r()*11)+'" fill="'+(r()<.3?P[2]:P[1])+'"/>'}
+else if(p.k==3){s+='<path d="M100 185V60" stroke="'+P[1]+'" stroke-width="4"/>';for(i=0;i<4;i++){var y=75+i*28,c=i%2?P[2]:P[1];s+='<ellipse cx="74" cy="'+y+'" rx="26" ry="11" fill="'+c+'" transform="rotate(-25 74 '+y+')"/><ellipse cx="126" cy="'+y+'" rx="26" ry="11" fill="'+c+'" transform="rotate(25 126 '+y+')"/>'}}
+else{for(i=0;i<4;i++){var w=60+r()*100;s+='<rect x="'+(100-w/2)+'" y="'+(30+i*38)+'" width="'+w+'" height="28" rx="14" fill="'+(i%2?P[2]:P[1])+'"/>'}}
+return '<svg viewBox="0 0 200 200" role="img" aria-label="Illustration option">'+s+'</svg>'}
+var S={name:'Maple Hill Bakery',desc:'Small-batch bread and pastries made fresh every morning.',tab:'logo',lay:0,vp:'Desktop',only:false,seed:{logo:0,hero:0,ill:0},items:{logo:[],hero:[],ill:[]},star:{},pick:{},edited:{},prompt:{}};
+var TABS=[['logo','Logos'],['hero','Hero images'],['ill','Illustrations']],LAYS=['Classic','Full-bleed','Editorial'],VPS={Phone:390,Tablet:768,Desktop:1280};
+function gen(t){var keep=S.items[t].filter(function(p){return S.star[p.id]||S.pick[t]===p.id}),r=rng(++S.seed[t]*7919+t.length*31),n=[],i;
+for(i=0;i<6;i++){var p={id:++uid,pal:r()*8|0};if(t=='logo'){p.mark=r()*6|0;p.lay=r()<.5?0:1;p.font=r()*4|0;p.up=r()<.3}else{p.k=r()*(t=='hero'?4:5)|0;p.s=r()*1e6|0}n.push(p)}
+S.items[t]=keep.concat(n);if(S.pick[t]==null)S.pick[t]=n[0].id}
+function pt(t){var w={logo:'A simple, memorable logo for ',hero:'A wide hero image for ',ill:'A friendly spot illustration for '},e={logo:' Flat vector style that works at small sizes.',hero:' Calm and welcoming, with room for text on the left.',ill:' Flat shapes and a limited palette.'};return w[t]+S.name+(S.desc?': '+S.desc.replace(/\.$/,''):'')+'.'+e[t]}
+function find(t){return S.items[t].filter(function(p){return p.id===S.pick[t]})[0]}
+function art(t,p){return t=='logo'?logo(p,S.name,56):t=='hero'?hero(p):ill(p)}
+function rTabs(){$('tabs').innerHTML=TABS.map(function(x){var n=S.items[x[0]].filter(function(p){return S.star[p.id]}).length;return '<button data-t="'+x[0]+'" aria-pressed="'+(S.tab==x[0])+'">'+x[1]+' ('+n+' starred)</button>'}).join('');
+$('lays').innerHTML=LAYS.map(function(x,i){return '<button data-l="'+i+'" aria-pressed="'+(S.lay==i)+'">'+x+'</button>'}).join('');
+$('vps').innerHTML=Object.keys(VPS).map(function(x){return '<button data-v="'+x+'" aria-pressed="'+(S.vp==x)+'">'+x+'</button>'}).join('');
+$('fo').setAttribute('aria-pressed',S.only)}
+function rGrid(){var t=S.tab,L=S.items[t].filter(function(p){return !S.only||S.star[p.id]});
+$('pr').value=S.edited[t]?S.prompt[t]:pt(t);
+$('gd').innerHTML=L.length?L.map(function(p,i){var bg=t=='logo'?' style="background:'+PAL[p.pal][0]+'"':'';return '<div class="opt'+(S.pick[t]===p.id?' sel':'')+'"><div class="thumb'+(t=='hero'?' full':'')+'"'+bg+'>'+art(t,p)+'</div><div class="row"><button data-a="star" data-id="'+p.id+'" aria-pressed="'+!!S.star[p.id]+'">'+(S.star[p.id]?'Starred':'Star')+'</button><button data-a="use" data-id="'+p.id+'" aria-pressed="'+(S.pick[t]===p.id)+'">'+(S.pick[t]===p.id?'In use':'Use')+'</button></div></div>'}).join(''):'<p class="mu">No starred options yet. Star the ones you like to keep them here.</p>'}
+function site(){var lp=find('logo'),hp=find('hero'),ip=find('ill'),P=PAL[lp?lp.pal:5],f=FONTS[lp?lp.font:1],set=ip?[ip]:[];
+set=set.concat(S.items.ill.filter(function(p){return S.star[p.id]&&p!==ip}));
+var n=esc(S.name),H=hp?hero(hp):'',L=lp?logo(lp,S.name,40):'<b>'+n+'</b>',
+cards=['Our story','What we offer','Visit us'].map(function(h,i){return '<div class="cd"><div class="ic">'+(set.length?ill(set[i%set.length]):'')+'</div><h3>'+h+'</h3><p>Short placeholder text about this section.</p></div>'}).join(''),
+tx='<h1>'+n+'</h1><p>'+esc(S.desc)+'</p><span class="bt">Get started</span>',
+body=S.lay==0?'<section class="hs"><div>'+tx+'</div><div class="im">'+H+'</div></section>':S.lay==1?'<section class="fb"><div class="im">'+H+'</div><div class="ov"><div class="bx">'+tx+'</div></div></section>':'<section class="he">'+tx+'</section><div class="im">'+H+'</div>';
+return '<div class="pv" style="--b:'+P[0]+';--i:'+P[1]+';--a:'+P[2]+';--s:'+P[3]+';--oa:'+oc(P[2])+';--hf:'+f[0].replace(/"/g,"'")+';--hw:'+f[1]+'"><header><div>'+L+'</div><nav><span>Home</span><span>About</span><span>Services</span><span>Contact</span></nav><span class="mn">Menu</span></header>'+body+'<section class="cs">'+cards+'</section><footer>© '+n+'</footer></div>'}
+function fit(){var vp=VPS[S.vp],a=$('pw').clientWidth||vp,s=Math.min(1,a/vp),fi=$('fi'),fw=$('fw');fi.style.width=vp+'px';fi.style.transform='scale('+s+')';fw.style.width=Math.round(vp*s)+'px';fw.style.height=Math.round(fi.offsetHeight*s)+'px';$('vl').textContent=S.vp+' view, '+vp+' px wide'+(s<1?', shown at '+Math.round(s*100)+'%':'')}
+function all(){rTabs();rGrid();$('fi').innerHTML=site();fit()}
+$('tabs').onclick=function(e){var b=e.target.closest('button');if(b){S.tab=b.dataset.t;all()}};
+$('lays').onclick=function(e){var b=e.target.closest('button');if(b){S.lay=+b.dataset.l;all()}};
+$('vps').onclick=function(e){var b=e.target.closest('button');if(b){S.vp=b.dataset.v;all()}};
+$('gd').onclick=function(e){var b=e.target.closest('button');if(!b)return;var id=+b.dataset.id;if(b.dataset.a=='star')S.star[id]=!S.star[id];else S.pick[S.tab]=id;all()};
+$('gn').onclick=function(){gen(S.tab);all()};
+$('fo').onclick=function(){S.only=!S.only;all()};
+$('pr').oninput=function(){S.edited[S.tab]=true;S.prompt[S.tab]=this.value};
+$('nm').oninput=function(){S.name=this.value.trim()||'Your business';all()};
+$('ds').oninput=function(){S.desc=this.value.trim();all()};
+$('nm').value=S.name;$('ds').value=S.desc;
+['logo','hero','ill'].forEach(gen);all();
+window.addEventListener('resize',fit);
+if(window.ResizeObserver)new ResizeObserver(fit).observe($('pw'));
+</script>
+</body>
+</html>
