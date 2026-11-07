@@ -19,8 +19,9 @@ var Shot = (function () {
     host.style.cssText = 'position:absolute;left:-100000px;top:0;width:' + w + 'px';
     host.innerHTML = html; document.body.appendChild(host);
     var imgs = Array.prototype.slice.call(host.querySelectorAll('img'));
+    imgs.forEach(function (im) { im.removeAttribute('loading'); });
     await Promise.all(imgs.map(function (im) { return toData(im.getAttribute('src')).then(function (d) { if (d) im.setAttribute('src', d); else im.removeAttribute('src'); }); }));
-    await Promise.all(imgs.map(function (im) { return im.decode ? im.decode().catch(function () { }) : null; }));
+    await Promise.all(imgs.map(function (im) { return Promise.race([im.decode ? im.decode().catch(function () { }) : null, new Promise(function (ok) { setTimeout(ok, 4000); })]); }));
     var full = host.scrollHeight, h = Math.min(full, opt.maxH || full, 30000), top = host.getBoundingClientRect().top;
     var secs = Array.prototype.slice.call(host.querySelectorAll('[data-sec]')).map(function (s) { var r = s.getBoundingClientRect(); return { id: s.dataset.sec, y: r.top - top, h: r.height }; });
     host.style.cssText = 'width:' + w + 'px';
