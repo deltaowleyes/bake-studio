@@ -16,7 +16,7 @@ export function blank() {
     menu: { items: [], cta: { label: 'Contact us', href: '#contact' }, vp: { desktop: { type: 'bar', logo: 'left', sticky: true, cta: false, search: false }, tablet: { type: 'hamburger', logo: 'left', sticky: true, cta: false, search: false }, phone: { type: 'hamburger', logo: 'left', sticky: true, cta: false, search: false } } },
     tpl: { pick: null, view: null, fav: {}, all: false, favOnly: false },
     notes: [], req: { name: '', email: '' }, ai: { endpoint: '' },
-    ui: { vp: 'desktop', tvp: 'all', mvp: 'desktop', btab: 'logo', bsrc: 'svg', sel: null, open: false, prompt: {}, page: null, tpage: null, pasteFor: null, libq: '' }
+    ui: { vp: 'desktop', tvp: 'all', mvp: 'desktop', btab: 'logo', bsrc: 'svg', sel: null, open: false, prompt: {}, page: null, tpage: null, pasteFor: null, libq: '', insp: { open: false, tab: 'section', key: null, item: null } }
   };
 }
 

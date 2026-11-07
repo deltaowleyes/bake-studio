@@ -123,7 +123,7 @@ export async function importPage(pg, html) {
 }
 
 /* ---------- step 3 editor fields ---------- */
-export const F_COMMON = [['bg', 'Background', 'sel', [['auto', 'Template default'], ['default', 'Page colour'], ['soft', 'Soft panel'], ['ink', 'Dark'], ['acc', 'Accent colour']]], ['align', 'Alignment', 'sel', [['auto', 'Template default'], ['center', 'Centred']]]];
+export const F_COMMON = [['bg', 'Background', 'sel', [['auto', 'Template default'], ['default', 'Page colour'], ['soft', 'Soft panel'], ['ink', 'Dark'], ['acc', 'Accent colour']]], ['align', 'Alignment', 'sel', [['auto', 'Template default'], ['left', 'Left'], ['center', 'Centred'], ['right', 'Right']]]];
 const IMG = ['image', 'Image', 'pick'];
 export const FIELDS = {
   pagehead: [['title', 'Page title'], ['text', 'Introduction', 'area'], ['image', 'Banner image', 'pick']],

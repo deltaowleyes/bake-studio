@@ -266,3 +266,27 @@
 .pv .hc{padding:8px 12px;font-size:14px}
 .pv .dw{grid-template-columns:1fr 1fr}
 }
+
+/* ---------- inspector overrides (set per section in step 3; see render.js lxAttr) ---------- */
+.pv .s.lx-pt{padding-top:var(--pt)!important}
+.pv .s.lx-pb{padding-bottom:var(--pb)!important}
+.pv .s-hero.lx-pt,.pv .s-hero.lx-pb{padding-top:0!important;padding-bottom:0!important}
+.pv .s-hero.lx-pt .hx{padding-top:var(--pt)!important}
+.pv .s-hero.lx-pb .hx{padding-bottom:var(--pb)!important}
+.pv .s.lx-cw .w,.pv .s.lx-cw .hx,.pv .s.lx-cw .phm{max-width:var(--cw)!important}
+.pv .s.lx-full .w,.pv .s.lx-full .hx,.pv .s.lx-full .phm{max-width:none!important}
+.pv .s.lx-mh{min-height:var(--mh);display:flex;flex-direction:column;justify-content:center}
+.pv .s.lx-va-top{justify-content:flex-start}.pv .s.lx-va-bottom{justify-content:flex-end}
+.pv .s-hero.lx-mh .hx{min-height:var(--mh);width:100%;box-sizing:border-box}
+.pv .s.lx-bg{background:var(--sbg)!important;color:var(--sink)!important}
+.pv .s.lx-ink{color:var(--sink)!important}
+.pv .s.lx-bg h1,.pv .s.lx-bg h2,.pv .s.lx-bg h3,.pv .s.lx-ink h1,.pv .s.lx-ink h2,.pv .s.lx-ink h3{color:inherit}
+.pv .al-left .w,.pv .al-left .sh,.pv .al-left .ht{text-align:left;justify-content:flex-start}
+.pv .al-right .w,.pv .al-right .sh,.pv .al-right .ht{text-align:right;justify-content:flex-end}
+.pv .al-right p{margin-left:auto}
+@container (max-width:599.98px){
+  .pv .s.lx-pt:not(.s-hero){padding-top:calc(var(--pt) * .6)!important}
+  .pv .s.lx-pb:not(.s-hero){padding-bottom:calc(var(--pb) * .6)!important}
+  .pv .s-hero.lx-pt .hx{padding-top:calc(var(--pt) * .6)!important}
+  .pv .s-hero.lx-pb .hx{padding-bottom:calc(var(--pb) * .6)!important}
+}

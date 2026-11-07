@@ -42,6 +42,11 @@ bake-studio/
         ├── steps/Step1–5.jsx one component per step
         ├── components/
         │   ├── Preview.jsx   screenshots + click-to-edit overlays; SizeButtons
+        │   ├── Inspector.jsx right-hand sidebar in step 3 (Text / Section / Page / Site tabs)
+        │   ├── FontPicker.jsx   searchable Google Fonts picker (full catalogue)
+        │   ├── ColourPicker.jsx brand colours + every art.js palette + free picker + hex
+        │   ├── SortableList.jsx drag-and-drop list (SortableJS)
+        │   ├── Field.jsx     one editor field (text, textarea, select, checkbox, image)
         │   ├── ImagePicker.jsx  the "Choose an image" dialog
         │   └── Html.jsx      shows a small generated SVG/img string (artwork thumbnails only)
         └── lib/              the page engine, plain JavaScript modules (no React)
@@ -49,6 +54,8 @@ bake-studio/
             ├── importer.js   Importer  fetch + parse an existing page into a project-shaped result
             ├── render.js     Render    project + template → page HTML string; templates and compatibility
             ├── shot.js       Shot      page HTML → full-page image (SVG foreignObject → canvas → blob URL) + box map
+            ├── fonts.js      Google Fonts: catalogue, embedding fonts into screenshots, picker previews
+            ├── gfonts.json   the Google Fonts catalogue (1,908 families; loaded only when needed)
             └── site.css      look of the GENERATED website (scoped to .pv); loaded in the page AND embedded in screenshots
 ```
 
@@ -56,7 +63,9 @@ bake-studio/
 
 **Build and publish:** `cd studio && npm install && npm run build`, then commit `index.html`, `assets/` and the source together and push to `main`. Vite gives built files hashed names, so there's no `?v=` cache number to bump any more.
 
-**Module dependencies:** `importer` → `art`; `render` → `art`; `shot` → `site.css` (raw text); `edit` → `store`, `art`, `importer`; steps → `store`, `edit`, `render`, components.
+**Packages:** react, react-dom, sortablejs; dev: vite, @vitejs/plugin-react, tailwindcss, @tailwindcss/vite.
+
+**Module dependencies:** `importer` → `art`; `render` → `art`; `shot` → `site.css` (raw text), `fonts`; `edit` → `store`, `art`, `importer`; steps → `store`, `edit`, `render`, components.
 
 ## 3. Project state (`S`)
 
@@ -85,13 +94,14 @@ S = {
       logo: [Asset], hero: [Asset], ill: [Asset]
     },
     pick: { logo: id, hero: id, ill: id }, // the asset "In use" for each kind
-    star: { [assetId]: true } // starred assets (starred illustrations fill cards and galleries)
+    star: { [assetId]: true },// starred assets (starred illustrations fill cards and galleries)
+    gf: { h, hcat, hw, b, bcat } | undefined // Google Fonts for the whole site (Inspector › Site); replaces the step 2 pair
   },
 
   pages: [Page],              // pages[0] is always Home
   lib: [LibImage],            // every image found on the imported site(s), max 400
 
-  footer: { motto, text },
+  footer: { motto, text, fx? },  // fx: text styles, as on sections (§3.4)
 
   menu: {
     items: [MenuItem],        // shared by all pages
@@ -117,7 +127,8 @@ S = {
     open: false,              // step 4 "Show the menu open"
     prompt: { logo, hero, ill }, // edited AI prompts
     pasteFor: pageId | null,  // which page the "Paste code" box is importing
-    libq: ''                  // search text for site images in step 2
+    libq: '',                 // search text for site images in step 2
+    insp: { open, tab, key, item } // step 3 Inspector: open?, 'text'|'section'|'page'|'site', text field being styled, its item index
   }
 }
 ```
@@ -129,7 +140,7 @@ Asset      = { id, kind: 'svg', from: 'svg' | 'ai', mark|lay|up (logo) | k|s (he
            | { id, kind: 'img', src, from: 'site' | 'upload' | 'ai', label }               // a real image
 LibImage   = { id, src, label, logo: bool }      // logo = "looks like a logo" (sorted first in logo pickers)
 Page       = { id, name, url, status: 'imported' | 'waiting' | 'importing' | 'blocked' | 'new', sections: [Section] }
-Section    = { id, type, title, text, …typeFields, items?: [Item], bg?, align?, image? }
+Section    = { id, type, title, text, …typeFields, items?: [Item], bg?, align?, image?, fx?, lx? }   // fx, lx: §3.4
 Item       = { id, title, text, link, linkText, eyebrow?, duration?, image? }
 ImageRef   = undefined (template default) | null (no image)
            | { kind: 'hero' } | { kind: 'ill', i } | { kind: 'img', src, label? }
@@ -156,7 +167,7 @@ Request    = { id, at (ms), name, email, text, tpl, status: 'Requested', summary
 | `cta` | Call to action | title, text, linkText/link | none |
 | `contact` | Contact details | title, text, linkText/link | title (label), text (value), link |
 
-Every section also takes `bg` (`auto`, `default`, `soft`, `ink`, `acc`) and `align` (`auto`, `center`). The editable fields per type are defined in `FIELDS` and `ITEMF` in `edit.js`. A field kind of `pick` opens the image picker.
+Every section also takes `bg` (`auto`, `default`, `soft`, `ink`, `acc`) and `align` (`auto`, `left`, `center`, `right`). The editable fields per type are defined in `FIELDS` and `ITEMF` in `edit.js`. A field kind of `pick` opens the image picker.
 
 ### 3.3 Saving, loading and migration
 
@@ -165,6 +176,20 @@ Every section also takes `bg` (`auto`, `default`, `soft`, `ink`, `acc`) and `ali
 - **Loading:** `load()` reads the key. A **v2** project (one page, `S.sections`) is converted to v3: its sections become `pages[0]` ("Home"), and site images found in `brand.opts` seed `lib`. Missing top-level keys and `ui` keys are filled from `blank()`.
 - **Start over** clears the key and reloads.
 - **Images in state:** uploads are stored as data URLs (shrunk to 1600 px for hero images, 700 px otherwise, WebP). Site images are stored as URLs only.
+
+### 3.4 Inspector overrides (`fx`, `lx`)
+
+Set in step 3's Inspector. Empty values mean "template default" and are deleted, so untouched sections stay clean.
+
+```js
+fx = { [fieldKey]: TextStyle }      // 'title', 'text', 'headline'…; item fields use 'item.title' etc. (one style for that field on every item)
+TextStyle = { font, fcat, size (px), weight, ls (em), lh, tt ('none'|'uppercase'|'lowercase'|'capitalize'), ital, color }
+lx = { pt, pb (px space above/below), cw (720|960|1200|1440|'full'), mh (min height px), va ('top'|'bottom'; default middle),
+       gap (px), r (corner px), bgc (custom background), ink (text colour; automatic contrast if only bgc) }
+```
+
+- **How it renders:** `render.js` sets `FX` while drawing a section; `fk(k)` / `ifk(k)` add an inline `style` to that field's element. Sizes over 20 px use `clamp(…, cqw, …)` so big text shrinks on phones. `lxAttr()` adds `lx-*` classes and CSS variables (`--pt --pb --cw --mh --gap --r --sbg --sink`) to the `<section>`. The rules for those classes are at the end of `site.css` ("inspector overrides"). On phones, space above and below is 60%.
+- **Fonts:** any Google font used (site fonts and `fx.font`) is collected while rendering and written on the page root as `data-gf="Family:400,700|…"`. Colours are only accepted as hex.
 
 ## 4. Logic per step
 
@@ -195,9 +220,15 @@ Every section also takes `bg` (`auto`, `default`, `soft`, `ink`, `acc`) and `ali
 - **The list** works on `SEC()` (the current page's sections): select, move up/down, delete, or add a section of any type after the selected one (`defaultSection`).
 - **The editor** is built from `FIELDS[type]` + background/alignment + `ITEMF[type]` for items (add, move, delete). Inputs update `S` straight away and refresh the preview after 120 ms.
 - **Image picker** (`<dialog id="picker">`): no image, the hero, illustrations 1–3, uploads (or upload a new one), and every `lib` image (searchable). The choice is stored as an `ImageRef`.
+- **Reordering:** drag the ⠿ handle in the section list (SortableJS via `SortableList`), or use the ↑/↓ buttons (keyboard route). SortableJS moves the DOM; `SortableList` puts it back and the new order is committed to `S`, so React stays in charge.
 - **Click-to-edit overlays:** the step 3 preview (`<Preview onPart>`) draws one empty, see-through `<button class="ov">` per box in the screenshot's box map (§5.1), positioned in percentages so they stay aligned at any width. They contain no page code. Hover shows a label ("Headline", "Item 2"…).
-  - Clicking a **section** selects it. Clicking an **item**, **text** or **image** selects its section, then scrolls to and focuses the matching editor field (`f-{path}-{field}`), or opens the image picker for image fields.
+  - Clicking a **section** or **item** selects the section and opens the Inspector on its Section tab. Clicking **text** opens the Text tab for that field. Clicking an **image** opens the image picker.
   - Section boxes are keyboard-focusable; inner boxes are `tabindex=-1` (the section list is the keyboard route).
+- **Inspector** (`Inspector.jsx`, fixed on the right, 380 px; the page and header make room on screens ≥1100 px; Esc closes):
+  - **Text:** the field's content, Google font (`FontPicker`), size, weight (limited to the font's weights), letter spacing, line height, capitals, italic, colour (`ColourPicker`). Item fields style every item of the section.
+  - **Section:** the section's own layout fields (layout/style/columns), space above/below, gap, content width, minimum height and content position, alignment, corner rounding, background (template choice or custom colour) and text colour.
+  - **Page:** drag-and-drop list of the page's sections.
+  - **Site:** Google Fonts for headings (with weight) and body text.
 
 ### Step 4: Menu
 - Each screen size has its own `MenuConfig`. Allowed types: desktop `bar`, `mega`, `split`, `hamburger`; tablet `bar`, `split`, `hamburger`, `bottom`; phone `hamburger`, `bottom`. Options: logo position, sticky header, search, show button. A button copies the current style to the other sizes where it's allowed.
@@ -234,10 +265,12 @@ S + template id + {pageId, sel, openMenu}
    │  Shot.take(html, width, {maxH, scale, type})
    ▼
  1. Put the HTML in a hidden off-screen .cq box at the target width (so container queries apply).
+ 1b. If the page has data-gf, fonts.pageFonts() fetches each family's Google CSS (Latin subset), turns the font files into
+    data URLs, adds the @font-face rules to the studio page (so measuring matches) and waits for them to load.
  2. Turn every <img> into a data URL (fetch → FileReader). Images that can't be fetched are dropped.
     `loading="lazy"` is removed first, because lazy images never load off-screen.
  3. Measure the full height and build the box map (sections, items, text, images; see §5.1).
- 4. Serialize to XHTML and wrap it with the contents of lib/site.css in <svg><foreignObject>.
+ 4. Serialize to XHTML and wrap it with the embedded fonts + lib/site.css in <svg><foreignObject>.
  5. Draw it on a canvas (scale 1 for desktop, 2 for tablet/phone, 0.5 for thumbnails) → blob URL.
  6. Results are cached by width + options + HTML (last 80).
 ```
@@ -287,6 +320,7 @@ map = { width, height,             // CSS px of the render width (not the pixel 
 - **Inputs are controlled:** they show values from `S` and call `commit` on every keystroke. React keeps focus, so no special handling is needed.
 - **Previews:** `<Preview vp opt onPart>` builds the page HTML with `Render.page` on every redraw and, 120 ms after the HTML stops changing, asks `Shot.take` for screenshots. Late results from an older HTML are ignored. With `onPart` it also draws the click-to-edit overlays from the box map.
 - **Template thumbnails** (`useThumbs` in Step5) are made one after another and restart after any change; `Shot`'s cache makes unchanged ones instant.
+- **Font picker previews** download only the letters of each font's name, under a separate family name (`bake-preview …`), so a preview copy can never replace the full font on the page.
 - **Styling:** existing look in `studio.css`, layered under Tailwind utilities, so a utility class always wins. Use Tailwind classes for new layout and the studio colours (`text-muted`, `border-line`, `bg-acc`, `text-onacc`, `bg-panel`, `text-warn`). Tailwind's reset (preflight) is deliberately off so generated pages measure the same in the page as in the screenshot.
 - **Test hook:** `window.BAKE = { state(), maps() }`: `maps()` returns the box maps of the step 3 preview's screenshots.
 

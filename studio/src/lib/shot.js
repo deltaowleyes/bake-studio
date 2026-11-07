@@ -1,4 +1,5 @@
 import siteCss from './site.css?raw';
+import { pageFonts } from './fonts.js';
 /* BAKE Studio: turn a generated page into a full-page picture (PNG) plus a JSON map of where each section, text block and image sits, so previews show images, not page code */
 var Shot = (function () {
   var cssP = null, imgCache = {}, shotCache = {}, order = [];
@@ -48,6 +49,8 @@ var Shot = (function () {
     opt = opt || {}; var key = w + '|' + (opt.maxH || 0) + '|' + (opt.scale || 1) + '|' + html;
     if (shotCache[key]) return shotCache[key];
     var style = await css();
+    var gf = /data-gf="([^"]*)"/.exec(html);   // Google fonts the page uses: embed them so the screenshot can show them
+    if (gf) style = (await pageFonts(gf[1].replace(/&amp;/g, '&'))) + style;
     var host = document.createElement('div'); host.className = 'cq';
     host.style.cssText = 'position:absolute;left:-100000px;top:0;width:' + w + 'px';
     host.innerHTML = html; document.body.appendChild(host);

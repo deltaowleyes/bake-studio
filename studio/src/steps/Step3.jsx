@@ -6,36 +6,9 @@ import { S, commit, useStudio } from '../store.js';
 import { nid, curPage, SEC, cur, placeholderPage, defaultSection, FIELDS, ITEMF, F_COMMON, FOOTER_F, fieldId } from '../edit.js';
 import Preview, { SizeButtons, fieldDef } from '../components/Preview.jsx';
 import ImagePicker from '../components/ImagePicker.jsx';
-import Html from '../components/Html.jsx';
-
-/** One editor field. f = [key, label, kind?, options?]; obj = the thing being edited; path = 'sec' | 'item:N' | 'footer'. */
-function Field({ f, obj, path, openPicker }) {
-  const [k, lab, kind = 'text'] = f, id = fieldId(path, k);
-  const set = v => commit(() => { obj[k] = v; });
-  if (kind == 'pick') {
-    const im = obj[k];
-    return <>
-      <label>{lab}</label>
-      <div className="pickf">
-        {im === null ? <span className="pv-th"><span className="mu">No image</span></span>
-          : im === undefined ? <span className="pv-th"><span className="mu">Template default</span></span>
-          : <Html className="pv-th" html={Render.imageRef(S, im, 0)} />}
-        <button className="sm" data-pick={path} onClick={() => openPicker(path, k)}>Choose image</button>
-        {im && <button className="sm" onClick={() => set(null)}>Remove</button>}
-      </div>
-    </>;
-  }
-  const v = obj[k] == null ? '' : obj[k];
-  if (kind == 'chk') return <label className="ck"><input type="checkbox" id={id} checked={!!v} onChange={e => set(e.target.checked)} /> {lab}</label>;
-  if (kind == 'sel') return <>
-    <label htmlFor={id}>{lab}</label>
-    <select id={id} value={String(v === '' ? f[3][0][0] : v)} onChange={e => set(k == 'cols' ? +e.target.value : e.target.value)}>
-      {f[3].map(o => <option key={o[0]} value={o[0]}>{o[1]}</option>)}
-    </select>
-  </>;
-  if (kind == 'area') return <><label htmlFor={id}>{lab}</label><textarea id={id} rows={3} value={v} onChange={e => set(e.target.value)} /></>;
-  return <><label htmlFor={id}>{lab}</label><input id={id} value={v} onChange={e => set(e.target.value)} /></>;
-}
+import Inspector from '../components/Inspector.jsx';
+import SortableList from '../components/SortableList.jsx';
+import Field from '../components/Field.jsx';
 
 function move(list, i, d) { const j = i + d; list.splice(j, 0, list.splice(i, 1)[0]); }
 
@@ -46,21 +19,14 @@ export default function Step3() {
   if (S.ui.sel != 'footer' && !cur() && secs[0]) S.ui.sel = secs[0].id;
   const s = S.ui.sel == 'footer' ? null : cur();
   const openPicker = (path, k) => setPick({ path, k });
-  const select = id => commit(S => { S.ui.sel = id; });
+  const select = id => commit(S => { S.ui.sel = id; S.ui.insp.key = null; if (S.ui.insp.tab == 'text') S.ui.insp.tab = 'section'; });
 
-  /* a click on the preview: select the section, then jump to the matching field (images open the picker) */
+  /* a click on the preview: images open the picker; sections, items and text open the Inspector */
   function editPart(b) {
-    select(b.sectionId);
     const path = b.sectionType == 'footer' ? 'footer' : b.itemIndex != null ? 'item:' + b.itemIndex : 'sec', f = b.field && fieldDef(b);
-    if (f && f[2] == 'pick') return openPicker(path, b.field);
-    setTimeout(() => {
-      let el = f && document.getElementById(fieldId(path, b.field));
-      if (!el && b.itemIndex != null) el = document.querySelectorAll('#sedit .item')[b.itemIndex];
-      el = el || document.getElementById('sedit'); if (!el) return;
-      el.scrollIntoView({ behavior: 'smooth', block: el.id == 'sedit' ? 'start' : 'center' });
-      if (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) el.focus({ preventScroll: true });
-      el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1200);
-    }, 40);
+    if (f && f[2] == 'pick') { select(b.sectionId); return openPicker(path, b.field); }
+    const text = b.type == 'text' && b.field;
+    commit(S => { S.ui.sel = b.sectionId; S.ui.insp = { open: true, tab: text ? 'text' : 'section', key: text ? b.field : null, item: text ? b.itemIndex : null }; });
   }
   function addPage() { commit(S => { const np = placeholderPage('New page'); S.pages.push(np); S.ui.page = np.id; S.ui.sel = np.sections[0].id; }); }
   function delPage() {
@@ -93,10 +59,11 @@ export default function Step3() {
           </div>
 
           <div className="card"><h3>Sections on this page</h3>
-            <p className="mu">Tap a section here, or any text or picture in the preview, to edit it.</p>
-            <ol className="slist">
+            <p className="mu">Drag ⠿ to reorder. Tap a section here, or any text or picture in the preview, to edit it.</p>
+            <SortableList className="slist" label="Sections on this page" onMove={(a, b) => commit(() => move(secs, a, b - a))}>
               {secs.map((x, i) => (
-                <li key={x.id} className={S.ui.sel == x.id ? 'on' : ''}>
+                <li key={x.id} className={'sortable' + (S.ui.sel == x.id ? ' on' : '')}>
+                  <span className="drag" title="Drag to reorder" aria-hidden="true">⠿</span>
                   <button className="nm" onClick={() => select(x.id)}>{x.title || x.headline || '(untitled)'}<small>{Render.SECTION_TYPES[x.type]}</small></button>
                   <button className="ib" aria-label="Move up" disabled={i == 0} onClick={() => commit(() => move(secs, i, -1))}>↑</button>
                   <button className="ib" aria-label="Move down" disabled={i == secs.length - 1} onClick={() => commit(() => move(secs, i, 1))}>↓</button>
@@ -104,7 +71,7 @@ export default function Step3() {
                 </li>
               ))}
               <li className={S.ui.sel == 'footer' ? 'on' : ''}><button className="nm" onClick={() => select('footer')}>Footer<small>Always at the bottom</small></button></li>
-            </ol>
+            </SortableList>
             <div className="row nowrap">
               <select aria-label="Section type" value={addType} onChange={e => setAddType(e.target.value)}>
                 {Object.keys(Render.SECTION_TYPES).map(k => <option key={k} value={k}>{Render.SECTION_TYPES[k]}</option>)}
@@ -141,11 +108,14 @@ export default function Step3() {
           </div>
         </div>
 
-        <div className="sticky"><div className="card"><h3>Preview</h3>
+        <div className="sticky"><div className="card">
+          <div className="flex items-center justify-between gap-2"><h3 className="m-0">Preview</h3>
+            <button className="sm" aria-pressed={!!S.ui.insp.open} onClick={() => commit(S => { S.ui.insp.open = !S.ui.insp.open; })}>{S.ui.insp.open ? 'Hide inspector' : 'Inspector'}</button></div>
           <SizeButtons k="vp" onPick={v => commit(S => { S.ui.vp = v; })} />
-          <Preview vp={S.ui.vp} opt={{ sel: S.ui.sel }} onPart={editPart} hint=" Tap any text or picture to edit it." />
+          <Preview vp={S.ui.vp} opt={{ sel: S.ui.sel }} onPart={editPart} hint=" Tap any text or section to style it in the inspector, or a picture to change it." />
         </div></div>
       </div>
+      {S.ui.insp.open && <Inspector openPicker={openPicker} />}
       <ImagePicker pick={pick} onClose={() => setPick(null)} />
     </section>
   );

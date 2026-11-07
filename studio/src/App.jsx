@@ -19,8 +19,9 @@ export default function App() {
   useStudio();
   ensureArt(); ensurePages();   // always have artwork options and a Home page
   const View = VIEWS[S.step - 1] || Step1;
+  const insp = S.step == 3 && S.ui.insp && S.ui.insp.open ? 'insp-open' : undefined;   // make room for the Inspector
   return <>
-    <header className="top">
+    <header className={'top' + (insp ? ' insp-open' : '')}>
       <div className="topin">
         <div><h1>BAKE Studio</h1><p className="mu">Build a website in five steps. Your work is saved in this browser.</p></div>
         <nav className="steps" aria-label="Steps">
@@ -28,7 +29,7 @@ export default function App() {
         </nav>
       </div>
     </header>
-    <main id="app">
+    <main id="app" className={insp}>
       {isStorageFull() && <p className="warn">Your browser’s storage is full, so the latest changes aren’t saved. Try removing some uploaded images.</p>}
       <View go={go} />
       <nav className="pager">

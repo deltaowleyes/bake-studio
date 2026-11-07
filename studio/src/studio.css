@@ -139,3 +139,8 @@ dialog#picker::backdrop{background:rgba(0,0,0,.45)}
 .ov-section:hover::after{top:auto;bottom:100%;transform:none}
 .ov:hover{z-index:2}
 .flash{outline:3px solid var(--acc);outline-offset:2px;transition:outline-color 1s}
+/* step 3: inspector sidebar + drag handles */
+@media (min-width:1100px){main.insp-open,.top.insp-open .topin{margin-right:380px;max-width:none}}
+.slist .drag{cursor:grab;user-select:none;color:var(--muted);font-size:20px;padding:0 4px 0 2px;align-self:center}
+.drag-ghost{opacity:.4}
+.drag-chosen{box-shadow:0 6px 20px rgba(0,0,0,.15)}

@@ -74,9 +74,45 @@ var Render = (function () {
   }
   function href(u) { return esc(u || '#'); }
   /* data-fk marks an editable field so Shot can map where it landed (the key matches the editor's field name) */
-  function fk(k) { return k ? ' data-fk="' + k + '"' : ''; }
+  /* ---------- inspector overrides (ARCHITECTURE.md §3.4) ----------
+     FX = the fx of the section being drawn; GF collects Google font families + weights the page needs. */
+  var FX = null, GF = null;
+  var FB = { s: 'sans-serif', r: 'serif', d: 'sans-serif', h: 'cursive', m: 'monospace' };
+  function num(v) { v = parseFloat(v); return isFinite(v) ? Math.round(v * 1000) / 1000 : 0; }
+  function okColor(c) { return /^#[0-9a-f]{3,8}$/i.test(c || ''); }
+  function useFont(fam, w) { if (GF && fam) (GF[fam] = GF[fam] || {})[w] = 1; }
+  function fstack(fam, cat) { return "'" + String(fam).replace(/['"<>&;]/g, '') + "'," + (FB[cat] || 'sans-serif'); }
+  function fxStyle(key) {
+    var x = FX && FX[key]; if (!x) return '';
+    var st = [];
+    if (x.font) { st.push('font-family:' + fstack(x.font, x.fcat)); if (x.weight) useFont(x.font, x.weight); else { useFont(x.font, 400); useFont(x.font, 700); } }
+    if (x.size) { var z = num(x.size); st.push('font-size:' + (z > 20 ? 'clamp(' + Math.max(14, Math.round(z * .5)) + 'px,' + (z * 1.8 / 12.8).toFixed(2) + 'cqw,' + z + 'px)' : z + 'px')); }
+    if (x.weight) st.push('font-weight:' + num(x.weight));
+    if (x.ls != null && x.ls !== '') st.push('letter-spacing:' + num(x.ls) + 'em');
+    if (x.lh) st.push('line-height:' + num(x.lh));
+    if (/^(none|uppercase|lowercase|capitalize)$/.test(x.tt || '')) st.push('text-transform:' + x.tt);
+    if (x.ital) st.push('font-style:italic');
+    if (okColor(x.color)) st.push('color:' + x.color);
+    return st.length ? ' style="' + st.join(';') + '"' : '';
+  }
+  /* section layout: classes + CSS variables read by the "inspector overrides" rules at the end of site.css */
+  function lxAttr(s) {
+    var x = s.lx || {}, cls = '', st = [];
+    if (x.pt != null && x.pt !== '') { cls += ' lx-pt'; st.push('--pt:' + num(x.pt) + 'px'); }
+    if (x.pb != null && x.pb !== '') { cls += ' lx-pb'; st.push('--pb:' + num(x.pb) + 'px'); }
+    if (x.cw == 'full') cls += ' lx-full'; else if (x.cw) { cls += ' lx-cw'; st.push('--cw:' + num(x.cw) + 'px'); }
+    if (x.mh) { cls += ' lx-mh lx-va-' + (/^(top|bottom)$/.test(x.va || '') ? x.va : 'center'); st.push('--mh:' + num(x.mh) + 'px'); }
+    if (x.gap != null && x.gap !== '') st.push('--gap:' + num(x.gap) + 'px');
+    if (x.r != null && x.r !== '') st.push('--r:' + num(x.r) + 'px');
+    if (okColor(x.bgc)) { cls += ' lx-bg'; st.push('--sbg:' + x.bgc + ';--sink:' + (okColor(x.ink) ? x.ink : Art.onColor(x.bgc))); }
+    else if (okColor(x.ink)) { cls += ' lx-ink'; st.push('--sink:' + x.ink); }
+    return { cls: cls, style: st.length ? ' style="' + st.join(';') + '"' : '' };
+  }
+  function fk(k) { return k ? ' data-fk="' + k + '"' + fxStyle(k) : ''; }
+  /* an item field: its style is shared by that field on every item of the section ('item.title') */
+  function ifk(k) { return k ? ' data-fk="' + k + '"' + fxStyle('item.' + k) : ''; }
   function tagImg(html, k) { return html ? html.replace(/^<(img|svg)\b/, '<$1' + fk(k || 'image')) : ''; }
-  function btn(text, link, cls, k) { return text ? '<a class="' + (cls || 'bt') + '" href="' + href(link) + '"' + fk(k) + '>' + esc(text) + '</a>' : ''; }
+  function btn(text, link, cls, k, item) { return text ? '<a class="' + (cls || 'bt') + '" href="' + href(link) + '"' + (item ? ifk(k) : fk(k)) + '>' + esc(text) + '</a>' : ''; }
   function paras(t, k) { return String(t || '').split(/\n{2,}/).filter(Boolean).map(function (p) { return '<p' + fk(k || 'text') + '>' + esc(p) + '</p>'; }).join(''); }
   function ii(i) { return ' data-ii="' + i + '"'; }
 
@@ -124,7 +160,7 @@ var Render = (function () {
       var st = s.style && s.style != 'auto' ? s.style : f.tiles, cols = s.cols || 3;
       return '<section class="s s-tiles"><div class="w">' + head(s) + '<div class="tl tl-' + st + ' c' + cols + '">' + (s.items || []).map(function (it, i) {
         var pic = s.showImg === false && st != 'icons' ? '' : it.image ? '<span class="tim">' + tagImg(imageRef(P, it.image, i)) + '</span>' : (s.showImg || st == 'icons') ? '<span class="tim">' + tagImg(illAt(P, i)) + '</span>' : '';
-        return '<a class="ti" href="' + href(it.link) + '"' + ii(i) + '>' + pic + '<span class="tx">' + (it.eyebrow ? '<small class="meta"' + fk('eyebrow') + '>' + esc(it.eyebrow) + '</small>' : '') + '<h3' + fk('title') + '>' + esc(it.title) + '</h3>' + (it.text ? '<p' + fk('text') + '>' + esc(it.text) + '</p>' : '') + (it.linkText ? '<b' + fk('linkText') + '>' + esc(it.linkText) + ' →</b>' : '') + '</span></a>';
+        return '<a class="ti" href="' + href(it.link) + '"' + ii(i) + '>' + pic + '<span class="tx">' + (it.eyebrow ? '<small class="meta"' + ifk('eyebrow') + '>' + esc(it.eyebrow) + '</small>' : '') + '<h3' + ifk('title') + '>' + esc(it.title) + '</h3>' + (it.text ? '<p' + ifk('text') + '>' + esc(it.text) + '</p>' : '') + (it.linkText ? '<b' + ifk('linkText') + '>' + esc(it.linkText) + ' →</b>' : '') + '</span></a>';
       }).join('') + '</div></div></section>';
     },
     feature: function (P, s, f) {
@@ -133,21 +169,21 @@ var Render = (function () {
         '<h3' + fk('headline') + '>' + esc(s.headline || '') + '</h3>' + paras(s.text) + btn(s.linkText, s.link, 'bt', 'linkText') + '</div></div></div></section>';
     },
     list: function (P, s) {
-      return '<section class="s s-list"><div class="w">' + head(s) + '<div class="ls">' + (s.items || []).map(function (it, i) { return '<div class="lr"' + ii(i) + '><strong' + fk('title') + '>' + esc(it.title) + '</strong>' + (it.text ? '<span' + fk('text') + '>' + esc(it.text) + '</span>' : '') + btn(it.linkText || 'Open', it.link, 'mo', 'linkText') + '</div>'; }).join('') + '</div>' + (s.linkText ? btn(s.linkText, s.link, 'mo', 'linkText') : '') + '</div></section>';
+      return '<section class="s s-list"><div class="w">' + head(s) + '<div class="ls">' + (s.items || []).map(function (it, i) { return '<div class="lr"' + ii(i) + '><strong' + ifk('title') + '>' + esc(it.title) + '</strong>' + (it.text ? '<span' + ifk('text') + '>' + esc(it.text) + '</span>' : '') + btn(it.linkText || 'Open', it.link, 'mo', 'linkText', 1) + '</div>'; }).join('') + '</div>' + (s.linkText ? btn(s.linkText, s.link, 'mo', 'linkText') : '') + '</div></section>';
     },
     text: function (P, s) {
       var img = s.image ? sectionImage(P, s) : '';
       return '<section class="s s-text' + (img ? ' wi' : '') + '"><div class="w"><div class="tb">' + (s.title ? '<h2' + fk('title') + '>' + esc(s.title) + '</h2>' : '') + paras(s.text) + btn(s.linkText, s.link, 'mo', 'linkText') + '</div>' + (img ? '<div class="fm">' + tagImg(img) + '</div>' : '') + '</div></section>';
     },
-    stats: function (P, s) { return '<section class="s s-stats"><div class="w">' + head(s) + '<div class="stt">' + (s.items || []).map(function (it, i) { return '<div' + ii(i) + '><b' + fk('title') + '>' + esc(it.title) + '</b><span' + fk('text') + '>' + esc(it.text) + '</span></div>'; }).join('') + '</div></div></section>'; },
-    gallery: function (P, s) { return '<section class="s s-gallery"><div class="w">' + head(s) + '<div class="gl">' + (s.items || []).map(function (it, i) { return '<figure' + ii(i) + '>' + tagImg(it.image ? imageRef(P, it.image, i) : illAt(P, i)) + (it.title ? '<figcaption' + fk('title') + '>' + esc(it.title) + '</figcaption>' : '') + '</figure>'; }).join('') + '</div></div></section>'; },
-    testimonial: function (P, s) { return '<section class="s s-quotes"><div class="w">' + head(s) + '<div class="qs">' + (s.items || []).map(function (it, i) { return '<blockquote' + ii(i) + '><p' + fk('text') + '>“' + esc(it.text) + '”</p><cite' + fk('title') + '>' + esc(it.title) + '</cite></blockquote>'; }).join('') + '</div></div></section>'; },
+    stats: function (P, s) { return '<section class="s s-stats"><div class="w">' + head(s) + '<div class="stt">' + (s.items || []).map(function (it, i) { return '<div' + ii(i) + '><b' + ifk('title') + '>' + esc(it.title) + '</b><span' + ifk('text') + '>' + esc(it.text) + '</span></div>'; }).join('') + '</div></div></section>'; },
+    gallery: function (P, s) { return '<section class="s s-gallery"><div class="w">' + head(s) + '<div class="gl">' + (s.items || []).map(function (it, i) { return '<figure' + ii(i) + '>' + tagImg(it.image ? imageRef(P, it.image, i) : illAt(P, i)) + (it.title ? '<figcaption' + ifk('title') + '>' + esc(it.title) + '</figcaption>' : '') + '</figure>'; }).join('') + '</div></div></section>'; },
+    testimonial: function (P, s) { return '<section class="s s-quotes"><div class="w">' + head(s) + '<div class="qs">' + (s.items || []).map(function (it, i) { return '<blockquote' + ii(i) + '><p' + ifk('text') + '>“' + esc(it.text) + '”</p><cite' + ifk('title') + '>' + esc(it.title) + '</cite></blockquote>'; }).join('') + '</div></div></section>'; },
     cta: function (P, s) { return '<section class="s s-cta"><div class="w"><h2' + fk('title') + '>' + esc(s.title) + '</h2>' + paras(s.text) + btn(s.linkText, s.link, 'bt bt3', 'linkText') + '</div></section>'; },
     videos: function (P, s, f) {
       var st = s.style && s.style != 'auto' ? s.style : (f.videos || 'grid'), items = (s.items || []).slice(0, 12);
       function card(it, i, big) {
         var th = it.image ? imageRef(P, it.image, i) : illAt(P, i);
-        return '<a class="vi' + (big ? ' big' : '') + '" href="' + href(it.link) + '"' + ii(i) + '><span class="vt">' + tagImg(th) + '<span class="play" aria-hidden="true"></span>' + (it.duration ? '<span class="du"' + fk('duration') + '>' + esc(it.duration) + '</span>' : '') + '</span><span class="vx">' + (it.eyebrow ? '<small class="meta"' + fk('eyebrow') + '>' + esc(it.eyebrow) + '</small>' : '') + '<h3' + fk('title') + '>' + esc(it.title) + '</h3>' + (big && it.text ? '<p' + fk('text') + '>' + esc(it.text) + '</p>' : '') + '</span></a>';
+        return '<a class="vi' + (big ? ' big' : '') + '" href="' + href(it.link) + '"' + ii(i) + '><span class="vt">' + tagImg(th) + '<span class="play" aria-hidden="true"></span>' + (it.duration ? '<span class="du"' + ifk('duration') + '>' + esc(it.duration) + '</span>' : '') + '</span><span class="vx">' + (it.eyebrow ? '<small class="meta"' + ifk('eyebrow') + '>' + esc(it.eyebrow) + '</small>' : '') + '<h3' + ifk('title') + '>' + esc(it.title) + '</h3>' + (big && it.text ? '<p' + ifk('text') + '>' + esc(it.text) + '</p>' : '') + '</span></a>';
       }
       var body;
       if (st == 'lead' && items.length > 1) body = '<div class="vl-lead">' + card(items[0], 0, true) + '<div class="rail">' + items.slice(1, 5).map(function (it, i) { return card(it, i + 1); }).join('') + '</div></div>' + (items.length > 5 ? '<div class="vg">' + items.slice(5, 9).map(function (it, i) { return card(it, i + 5); }).join('') + '</div>' : '');
@@ -157,14 +193,14 @@ var Render = (function () {
     },
     podcast: function (P, s) {
       return '<section class="s s-podcast"><div class="w">' + head(s) + '<div class="pods">' + (s.items || []).slice(0, 8).map(function (it, i) {
-        return '<div class="pod"' + ii(i) + '><span class="pc">' + tagImg(it.image ? imageRef(P, it.image, i) : illAt(P, i + 2)) + '</span><div class="px"><h3' + fk('title') + '>' + esc(it.title) + '</h3>' + (it.text ? '<p' + fk('text') + '>' + esc(it.text) + '</p>' : '') + '<div class="bar"><span class="pb" aria-hidden="true">▶</span><span class="tr"><i style="width:' + (18 + (i * 23) % 60) + '%"></i></span><span class="tm">00:00</span></div></div></div>';
+        return '<div class="pod"' + ii(i) + '><span class="pc">' + tagImg(it.image ? imageRef(P, it.image, i) : illAt(P, i + 2)) + '</span><div class="px"><h3' + ifk('title') + '>' + esc(it.title) + '</h3>' + (it.text ? '<p' + ifk('text') + '>' + esc(it.text) + '</p>' : '') + '<div class="bar"><span class="pb" aria-hidden="true">▶</span><span class="tr"><i style="width:' + (18 + (i * 23) % 60) + '%"></i></span><span class="tm">00:00</span></div></div></div>';
       }).join('') + '</div></div></section>';
     },
     pagehead: function (P, s) {
       var img = s.image ? imageRef(P, s.image) : '';
       return '<section class="s s-pagehead' + (img ? ' wi' : '') + '"><div class="w"><p class="crumb">Home <span>/</span> ' + esc(s.title) + '</p><h1' + fk('title') + '>' + esc(s.title) + '</h1>' + paras(s.text) + '</div>' + (img ? '<div class="phm">' + tagImg(img) + '</div>' : '') + '</section>';
     },
-    contact: function (P, s) { return '<section class="s s-contact"><div class="w">' + head(s) + '<dl class="ct">' + (s.items || []).map(function (it, i) { return '<div' + ii(i) + '><dt' + fk('title') + '>' + esc(it.title) + '</dt><dd' + fk('text') + '>' + (it.link ? '<a href="' + href(it.link) + '">' + esc(it.text || it.link) + '</a>' : esc(it.text)) + '</dd></div>'; }).join('') + '</dl>' + btn(s.linkText, s.link, 'bt', 'linkText') + '</div></section>'; }
+    contact: function (P, s) { return '<section class="s s-contact"><div class="w">' + head(s) + '<dl class="ct">' + (s.items || []).map(function (it, i) { return '<div' + ii(i) + '><dt' + ifk('title') + '>' + esc(it.title) + '</dt><dd' + ifk('text') + '>' + (it.link ? '<a href="' + href(it.link) + '">' + esc(it.text || it.link) + '</a>' : esc(it.text)) + '</dd></div>'; }).join('') + '</dl>' + btn(s.linkText, s.link, 'bt', 'linkText') + '</div></section>'; }
   };
 
   function footer(P) {
@@ -176,17 +212,23 @@ var Render = (function () {
   function page(P, tplId, opt) {
     opt = opt || {}; var t = tpl(tplId), f = t.fam, v = t.v, p = pal(P), F = font(P);
     var dark = Art.lum(p.bg) < 110;
+    GF = {}; var gf = P.brand.gf || {};
+    if (gf.h) { F = Object.assign({}, F, { h: fstack(gf.h, gf.hcat) }); useFont(gf.h, gf.hw || F.w); }
+    if (gf.hw) F = Object.assign({}, F, { w: num(gf.hw) });
+    if (gf.b) { F = Object.assign({}, F, { b: fstack(gf.b, gf.bcat) }); useFont(gf.b, 400); useFont(gf.b, 700); }
     var vars = '--bg:' + p.bg + ';--ink:' + p.ink + ';--acc:' + p.acc + ';--soft:' + p.soft + ';--oa:' + Art.onColor(p.acc) + ';--oi:' + Art.onColor(p.ink) + ';--line:' + Art.mix(p.bg, p.ink, dark ? .3 : .16) + ';--mute:' + Art.mix(p.ink, p.bg, .3) + ';--card:' + (dark ? Art.mix(p.bg, p.ink, .06) : '#ffffff') + ';--hf:' + F.h.replace(/"/g, "'") + ';--bf:' + F.b.replace(/"/g, "'") + ';--hw:' + F.w + ';--r:' + v.r + 'px';
     var secs = pageOf(P, opt.pageId).sections.map(function (s, i) {
-      var h = (SEC[s.type] || SEC.text)(P, s, f), bg = s.bg && s.bg != 'auto' ? s.bg : (v.band != 'none' && i % 2 == 1 && s.type != 'hero' ? v.band : 'default');
+      FX = s.fx || null; var h = (SEC[s.type] || SEC.text)(P, s, f), lx = lxAttr(s); FX = null; var bg = s.bg && s.bg != 'auto' ? s.bg : (v.band != 'none' && i % 2 == 1 && s.type != 'hero' ? v.band : 'default');
       if (f.bands && s.type == 'cta') bg = 'acc';
       if (s.type == 'pagehead' && (!s.bg || s.bg == 'auto')) bg = f.k == 'bold' || f.k == 'portal' ? 'ink' : 'soft';
-      return h.replace('<section class="s ', '<section data-sec="' + s.id + '" data-type="' + s.type + '" data-si="' + i + '" class="s bg-' + bg + ' al-' + (s.align || 'auto') + (opt.sel == s.id ? ' sel' : '') + ' ');
+      return h.replace('<section class="s ', '<section data-sec="' + s.id + '" data-type="' + s.type + '" data-si="' + i + '"' + lx.style + ' class="s bg-' + bg + ' al-' + (s.align || 'auto') + lx.cls + (opt.sel == s.id ? ' sel' : '') + ' ');
     }).join('');
     var mv = opt.openMenu;
-    return '<div class="pv tf-' + f.k + ' tv-' + v.k + ' dn-' + v.dens + '" style="' + vars + '">' +
+    FX = P.footer.fx || null; var foot = footer(P); FX = null;
+    var gfs = Object.keys(GF).map(function (k) { return k + ':' + Object.keys(GF[k]).join(','); }).join('|'); GF = null;
+    return '<div class="pv tf-' + f.k + ' tv-' + v.k + ' dn-' + v.dens + '" style="' + vars + '"' + (gfs ? ' data-gf="' + esc(gfs) + '"' : '') + '>' +
       '<div class="vh vh-d">' + header(P, 'desktop', mv == 'desktop') + '</div><div class="vh vh-t">' + header(P, 'tablet', mv == 'tablet') + '</div><div class="vh vh-p">' + header(P, 'phone', mv == 'phone') + '</div>' +
-      '<main>' + secs + '</main>' + footer(P) +
+      '<main>' + secs + '</main>' + foot +
       (P.menu.vp.tablet.type == 'bottom' ? '<div class="vh vh-t">' + bottomBar(P, 'tablet', mv == 'tablet') + '</div>' : '') +
       (P.menu.vp.phone.type == 'bottom' ? '<div class="vh vh-p">' + bottomBar(P, 'phone', mv == 'phone') + '</div>' : '') + '</div>';
   }
