@@ -1,3 +1,4 @@
+import { Art } from './art.js';
 /* BAKE Studio: turn a project into a web page (used for previews; data-sec / data-ii / data-fk attributes let Shot map where things land) */
 var Render = (function () {
   var esc = Art.esc;
@@ -192,3 +193,5 @@ var Render = (function () {
 
   return { page: page, pageOf: pageOf, allSections: allSections, imageRef: imageRef, TEMPLATES: TEMPLATES, FAMILIES: FAMILIES, tpl: tpl, compat: compat, SECTION_TYPES: SECTION_TYPES, MENU_TYPES: MENU_TYPES, asset: asset, picked: picked };
 })();
+
+export { Render };

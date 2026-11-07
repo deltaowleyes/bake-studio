@@ -68,3 +68,5 @@ var Art = (function () {
   }
   return { esc: esc, rng: rng, hex: hex, lum: lum, sat: sat, onColor: onColor, mix: mix, PALETTES: PALETTES, FONTS: FONTS, logo: logo, hero: hero, ill: ill, genOptions: genOptions };
 })();
+
+export { Art };

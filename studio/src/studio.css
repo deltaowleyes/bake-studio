@@ -125,7 +125,7 @@ dialog#picker::backdrop{background:rgba(0,0,0,.45)}
 #pkbody{padding:4px 16px 18px}
 .pk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:8px}
 .pk{flex-direction:column;align-items:stretch;padding:6px;height:auto;min-height:0;gap:4px}
-.pk>svg,.pk>img{width:100%;height:84px;object-fit:cover;border-radius:6px;background:#fff}
+.pk svg,.pk img{width:100%;height:84px;object-fit:cover;border-radius:6px;background:#fff}
 .pk>.mu{height:84px;display:flex;align-items:center;justify-content:center}
 .pk small{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #pbar label{margin-top:0}

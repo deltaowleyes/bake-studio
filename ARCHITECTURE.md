@@ -1,6 +1,6 @@
 # BAKE Studio: architecture
 
-This describes BAKE Studio as it is now (November 2026, project format **v3**). It is a static web app with no server and no build step, published by GitHub Pages from `deltaowleyes/bake-studio` (branch `main`, folder `/`). Live: https://deltaowleyes.ca/bake-studio/ (the repo's GitHub Pages address, https://deltaowleyes.github.io/bake-studio/, redirects there because of the custom domain).
+This describes BAKE Studio as it is now (November 2026, project format **v3**). It is a static web app with no server, built with **React + Vite + Tailwind CSS** and published by GitHub Pages from `deltaowleyes/bake-studio` (branch `main`, folder `/`). The source lives in `studio/`; `npm run build` writes the built site into the repo's main folder, which is what Pages serves. Live: https://deltaowleyes.ca/bake-studio/ (the repo's GitHub Pages address, https://deltaowleyes.github.io/bake-studio/, redirects there because of the custom domain).
 
 ## 1. What it does
 
@@ -23,27 +23,44 @@ A five-step wizard that turns an existing website (or a blank start) into previe
 
 ```
 bake-studio/
-├── index.html          Studio shell: header, step nav, one <section> per step, image picker <dialog>
-├── README.md           Short overview for people browsing the repo
-├── ARCHITECTURE.md     This file
-├── css/
-│   ├── studio.css      Look of the studio itself (cards, buttons, grids, picker, light/dark)
-│   └── site.css        Look of the GENERATED website (scoped to .pv); also fed into screenshots
-└── js/                 Plain scripts, loaded in this order (each defines one global)
-    ├── art.js          Art       palettes, font pairs, colour maths, SVG logo/hero/illustration generators
-    ├── importer.js     Importer  fetch + parse an existing page into a project-shaped result
-    ├── render.js       Render    project + template → page HTML string; templates and compatibility
-    ├── shot.js         Shot      page HTML → full-page image (SVG foreignObject → canvas → blob URL) + box map
-    └── app.js          (IIFE)    state, saving, the five steps' UI and all event handling; exposes window.BAKE
+├── index.html, assets/       BUILT studio (made by `npm run build`; don't edit by hand)
+├── .nojekyll                 tells GitHub Pages to serve files as they are
+├── README.md, ARCHITECTURE.md, CLAUDE.md
+└── studio/                   SOURCE (Vite project)
+    ├── index.html            page shell with <div id="root">
+    ├── package.json          scripts: dev, build (clean → vite build → place)
+    ├── vite.config.js        React + Tailwind plugins; base './'
+    ├── scripts/clean.mjs     removes the old build from the repo main folder
+    ├── scripts/place.mjs     copies studio/dist into the repo main folder + .nojekyll
+    └── src/
+        ├── main.jsx          starts React; window.BAKE test hook
+        ├── index.css         Tailwind theme + utilities (no reset) + studio.css as a layer; studio colours as Tailwind colours
+        ├── studio.css        the studio's component styles (cards, buttons, grids, picker, overlays, light/dark)
+        ├── store.js          S (project state), load/migrate, save, commit(), useStudio()
+        ├── edit.js           editing logic shared by the steps: pages, starter, applyImport, importPage, FIELDS/ITEMF…
+        ├── App.jsx           header + step buttons, active step, Back/Next, storage-full warning
+        ├── steps/Step1–5.jsx one component per step
+        ├── components/
+        │   ├── Preview.jsx   screenshots + click-to-edit overlays; SizeButtons
+        │   ├── ImagePicker.jsx  the "Choose an image" dialog
+        │   └── Html.jsx      shows a small generated SVG/img string (artwork thumbnails only)
+        └── lib/              the page engine, plain JavaScript modules (no React)
+            ├── art.js        Art       palettes, font pairs, colour maths, SVG logo/hero/illustration generators
+            ├── importer.js   Importer  fetch + parse an existing page into a project-shaped result
+            ├── render.js     Render    project + template → page HTML string; templates and compatibility
+            ├── shot.js       Shot      page HTML → full-page image (SVG foreignObject → canvas → blob URL) + box map
+            └── site.css      look of the GENERATED website (scoped to .pv); loaded in the page AND embedded in screenshots
 ```
 
-**Loading:** script tags carry a cache-busting query (`?v=9` at the time of writing). Bump it in `index.html` whenever JS or CSS changes, or browsers may keep old files for up to 10 minutes.
+**Why templates stay plain HTML/CSS:** previews are screenshots made by drawing the page's HTML plus `site.css` inside an SVG. That only works with plain markup and one stylesheet, so `render.js` and `site.css` don't use React or Tailwind. React and Tailwind are for the studio around them.
 
-**Module dependencies:** `importer` → `art` (colour maths); `render` → `art`; `shot` → (fetches `css/site.css`); `app` → all four.
+**Build and publish:** `cd studio && npm install && npm run build`, then commit `index.html`, `assets/` and the source together and push to `main`. Vite gives built files hashed names, so there's no `?v=` cache number to bump any more.
+
+**Module dependencies:** `importer` → `art`; `render` → `art`; `shot` → `site.css` (raw text); `edit` → `store`, `art`, `importer`; steps → `store`, `edit`, `render`, components.
 
 ## 3. Project state (`S`)
 
-One plain object, created by `blank()` in `app.js` and saved whole as JSON under the `localStorage` key `bake-studio-v2`. (The key name is historical; the format version lives in `S.v`.)
+One plain object, created by `blank()` in `store.js` and saved whole as JSON under the `localStorage` key `bake-studio-v2`. (The key name is historical; the format version lives in `S.v`.)
 
 ```js
 S = {
@@ -139,11 +156,12 @@ Request    = { id, at (ms), name, email, text, tpl, status: 'Requested', summary
 | `cta` | Call to action | title, text, linkText/link | none |
 | `contact` | Contact details | title, text, linkText/link | title (label), text (value), link |
 
-Every section also takes `bg` (`auto`, `default`, `soft`, `ink`, `acc`) and `align` (`auto`, `center`). The editable fields per type are defined in `FIELDS` and `ITEMF` in `app.js`. A field kind of `pick` opens the image picker.
+Every section also takes `bg` (`auto`, `default`, `soft`, `ink`, `acc`) and `align` (`auto`, `center`). The editable fields per type are defined in `FIELDS` and `ITEMF` in `edit.js`. A field kind of `pick` opens the image picker.
 
 ### 3.3 Saving, loading and migration
 
 - **Saving:** `save()` writes the whole `S` 250 ms after the last change. If the browser's storage is full (usually from large uploads), a warning banner appears.
+- **Saving and loading** are in `store.js`. The key and format are unchanged from the pre-React studio, so saved work carries over.
 - **Loading:** `load()` reads the key. A **v2** project (one page, `S.sections`) is converted to v3: its sections become `pages[0]` ("Home"), and site images found in `brand.opts` seed `lib`. Missing top-level keys and `ui` keys are filled from `blank()`.
 - **Start over** clears the key and reloads.
 - **Images in state:** uploads are stored as data URLs (shrunk to 1600 px for hero images, 700 px otherwise, WebP). Site images are stored as URLs only.
@@ -177,7 +195,7 @@ Every section also takes `bg` (`auto`, `default`, `soft`, `ink`, `acc`) and `ali
 - **The list** works on `SEC()` (the current page's sections): select, move up/down, delete, or add a section of any type after the selected one (`defaultSection`).
 - **The editor** is built from `FIELDS[type]` + background/alignment + `ITEMF[type]` for items (add, move, delete). Inputs update `S` straight away and refresh the preview after 120 ms.
 - **Image picker** (`<dialog id="picker">`): no image, the hero, illustrations 1–3, uploads (or upload a new one), and every `lib` image (searchable). The choice is stored as an `ImageRef`.
-- **Click-to-edit overlays:** the step 3 preview (`#pv3`) draws one empty, see-through `<button class="ov">` per box in the screenshot's box map (§5.1), positioned in percentages so they stay aligned at any width. They contain no page code. Hover shows a label ("Headline", "Item 2"…).
+- **Click-to-edit overlays:** the step 3 preview (`<Preview onPart>`) draws one empty, see-through `<button class="ov">` per box in the screenshot's box map (§5.1), positioned in percentages so they stay aligned at any width. They contain no page code. Hover shows a label ("Headline", "Item 2"…).
   - Clicking a **section** selects it. Clicking an **item**, **text** or **image** selects its section, then scrolls to and focuses the matching editor field (`f-{path}-{field}`), or opens the image picker for image fields.
   - Section boxes are keyboard-focusable; inner boxes are `tabindex=-1` (the section list is the keyboard route).
 
@@ -241,7 +259,7 @@ map = { width, height,             // CSS px of the render width (not the pixel 
 - `type`: `section`, `item`, `text` or `image`. Boxes are ordered sections → items → text/images, so later ones sit on top.
 - `sectionIndex`: the section's position on the page; the footer is `-1` (`sectionId: 'footer'`).
 - `id`: `sectionId[:itemIndex][:field]`, with `:2`, `:3`… for repeats (for example several paragraphs of one text field).
-- The tags come from `render.js`: `data-sec`, `data-type`, `data-si` on each section (and the footer), `data-ii` on each item, `data-fk="{field}"` on each editable text or image. Field names match `FIELDS` / `ITEMF` in `app.js`.
+- The tags come from `render.js`: `data-sec`, `data-type`, `data-si` on each section (and the footer), `data-ii` on each item, `data-fk="{field}"` on each editable text or image. Field names match `FIELDS` / `ITEMF` in `edit.js`.
 - Test hook: `BAKE.maps('pv3')` returns the maps of a stage's current screenshots.
 
 ## 6. Importer logic (`Importer.analyse(html, url, log, {inner})`)
@@ -263,13 +281,14 @@ map = { width, height,             // CSS px of the render width (not the pixel 
    - **Other blocks:** `section`/`article` blocks that aren't card groups → `feature` (heading + subheading + paragraph) or `text`. Runs of 3+ `<article>`s are combined into one `tiles` "Stories" grid.
    - Sections are kept in page order, up to 14. Inner pages also start with a `pagehead`.
 
-## 7. Events and rendering in `app.js`
+## 7. How the React app works
 
-- **One listener per event type on `document`** (`click`, `input`, `change`, `keydown`), dispatching on element ids and `data-*` attributes (`data-step`, `data-vp`, `data-star`, `data-use`, `data-pick`, `data-pimp`, `data-tp`, and so on).
-- **Full redraw:** `renderAll()` → shows the active step, runs that step's draw function (`r1`–`r5`), refreshes previews, draws the Back/Next bar, then `save()`. Most clicks end in `renderAll()`.
-- **Typing doesn't rebuild the form,** so focus is kept: it updates `S`, then `softPreview()` refreshes the preview (and the step 3 list) after 120 ms.
-- **Previews:** `frame(stageId, vp, opt)` → `Shot.take` → swaps in the image. Each stage has a token, so slow results that arrive late are ignored.
-- **Test hook:** `window.BAKE = { state(), maps(stageId), useImport(result) }`.
+- **One store, mutable state.** `S` is a plain object (as before). Change it with `commit(S => { … })`: the change is applied, every component using `useStudio()` redraws, and `save()` writes to `localStorage` 250 ms later. Components read `S` directly; avoid `React.memo` on them, since `S` is changed in place.
+- **Inputs are controlled:** they show values from `S` and call `commit` on every keystroke. React keeps focus, so no special handling is needed.
+- **Previews:** `<Preview vp opt onPart>` builds the page HTML with `Render.page` on every redraw and, 120 ms after the HTML stops changing, asks `Shot.take` for screenshots. Late results from an older HTML are ignored. With `onPart` it also draws the click-to-edit overlays from the box map.
+- **Template thumbnails** (`useThumbs` in Step5) are made one after another and restart after any change; `Shot`'s cache makes unchanged ones instant.
+- **Styling:** existing look in `studio.css`, layered under Tailwind utilities, so a utility class always wins. Use Tailwind classes for new layout and the studio colours (`text-muted`, `border-line`, `bg-acc`, `text-onacc`, `bg-panel`, `text-warn`). Tailwind's reset (preflight) is deliberately off so generated pages measure the same in the page as in the screenshot.
+- **Test hook:** `window.BAKE = { state(), maps() }`: `maps()` returns the box maps of the step 3 preview's screenshots.
 
 ## 8. Known limits and what Supabase will add
 

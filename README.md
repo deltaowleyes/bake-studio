@@ -11,11 +11,9 @@ A website design studio. Live: https://deltaowleyes.ca/bake-studio/
 
 Progress is saved in the browser for now. Supabase (logins, saved projects, change requests, and OpenAI images through a secure function) comes next.
 
+## Built with
+React + Vite + Tailwind CSS for the studio. The generated websites stay plain HTML and CSS, because previews are screenshots of them.
+
 ## Files
-- `index.html`: the studio page
-- `css/studio.css`: studio look; `css/site.css`: the generated website's look (also used in downloads)
-- `js/art.js`: palettes, fonts and SVG artwork
-- `js/importer.js`: reads an existing site
-- `js/render.js`: builds pages, menus and templates
-- `js/shot.js`: turns pages into full-page screenshots
-- `js/app.js`: the five steps
+- `studio/`: the source code (see `ARCHITECTURE.md`)
+- `index.html` and `assets/`: the built studio that GitHub Pages serves (made by `npm run build` in `studio/`)

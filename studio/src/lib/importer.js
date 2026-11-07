@@ -1,3 +1,4 @@
+import { Art } from './art.js';
 /* BAKE Studio: read an existing web page and turn it into a starting project */
 var Importer = (function () {
   var uid = 0; function id(p) { return (p || 'x') + Date.now().toString(36) + (uid++); }
@@ -255,3 +256,5 @@ var Importer = (function () {
   }
   return { fetchHtml: fetchHtml, analyse: analyse, id: id };
 })();
+
+export { Importer };

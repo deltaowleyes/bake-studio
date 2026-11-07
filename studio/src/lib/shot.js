@@ -1,7 +1,8 @@
+import siteCss from './site.css?raw';
 /* BAKE Studio: turn a generated page into a full-page picture (PNG) plus a JSON map of where each section, text block and image sits, so previews show images, not page code */
 var Shot = (function () {
   var cssP = null, imgCache = {}, shotCache = {}, order = [];
-  function css() { if (!cssP) cssP = fetch('css/site.css').then(function (r) { return r.text(); }).catch(function () { return ''; }); return cssP; }
+  function css() { if (!cssP) cssP = Promise.resolve(siteCss); return cssP; }
   function toData(src) {
     if (/^data:/.test(src)) return Promise.resolve(src);
     if (!imgCache[src]) imgCache[src] = fetch(src).then(function (r) { if (!r.ok) throw 0; return r.blob(); }).then(function (b) {
@@ -69,3 +70,5 @@ var Shot = (function () {
   }
   return { take: take };
 })();
+
+export { Shot };
