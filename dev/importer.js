@@ -127,6 +127,10 @@ var Importer = (function () {
   function groupTitle(c, items) {
     var own = A(c.querySelectorAll('h1, h2, h3, h4')).filter(function (h) { return !items.some(function (i) { return i.contains(h); }); })[0];
     if (own && txt(own).length < 70) return txt(own);
+    for (var t = c, k = 0; t && k < 6; t = t.parentElement, k++) {
+      if (t.id) { var tab = t.ownerDocument.querySelector('[aria-controls="' + t.id + '"], a[href="#' + t.id + '"]'); if (tab && txt(tab) && txt(tab).length < 50) return txt(tab); }
+      var lb = t.getAttribute && t.getAttribute('aria-labelledby'); if (lb) { var le = t.ownerDocument.getElementById(lb); if (le && txt(le).length < 50) return txt(le); }
+    }
     for (var el = c, d = 0; el && d < 6; el = el.parentElement, d++) {
       if (el.getAttribute && el.getAttribute('aria-label') && !/carousel|slider/i.test(el.getAttribute('aria-label'))) return el.getAttribute('aria-label');
       for (var p = el.previousElementSibling, i = 0; p && i < 3; p = p.previousElementSibling, i++) {
@@ -137,6 +141,7 @@ var Importer = (function () {
     return '';
   }
   function cardGroups(root, base) {
+    base = base || '';
     var raw = [];
     A(root.querySelectorAll('*')).forEach(function (c) {
       if (c.closest('header, nav, footer, [role="navigation"], form, select, [class*="menu"], [class*="breadcrumb"], [class*="share"], [class*="social"], [class*="tags"]')) return;
@@ -163,7 +168,7 @@ var Importer = (function () {
     return keep.map(function (g) {
       var seen = {}, items = g.items.map(function (el) { return cardItem(el, base); }).filter(function (it) { var k = it.link || it.title; if (!it.title || seen[k]) return false; seen[k] = 1; return true; });
       return { el: g.c, title: groupTitle(g.c, g.items), items: items.slice(0, 12), count: items.length };
-    }).filter(function (g) { return g.items.length >= 3; });
+    }).filter(function (g) { var anchors = g.items.filter(function (i) { return /#[\w-]*$/.test(i.link) && i.link.split('#')[0] == String(base).split('#')[0]; }).length; return g.items.length >= 3 && anchors < g.items.length * .5; });
   }
 
   /* ---------- sections ---------- */
@@ -191,7 +196,8 @@ var Importer = (function () {
     var root = doc.querySelector('main, [role="main"], #main, #content, .site-content') || doc.body, found = [];
     var groups = cardGroups(root, base);
     var gseen = {};
-    var kept = []; groups = groups.filter(function (g) { var ls = g.items.map(function (i) { return (i.link || '') + '|' + i.title; }); var dup = kept.some(function (k) { return ls.filter(function (l) { return k.indexOf(l) >= 0; }).length >= ls.length * .5; }); if (!dup) kept.push(ls); return !dup; });
+    var kept = []; groups = groups.filter(function (g) { var ls = g.items.map(function (i) { return (i.link || '') + '|' + i.title; }); var links = g.items.map(function (i) { return i.link; }); var dup = kept.some(function (k) { return ls.filter(function (l) { return k[0].indexOf(l) >= 0; }).length >= ls.length * .5 || links.filter(function (l) { return l && k[1].indexOf(l) >= 0; }).length >= links.length * .8; }); if (!dup) kept.push([ls, links]); return !dup; });
+    var tcount = {}; groups.forEach(function (g) { if (g.title) { tcount[g.title] = (tcount[g.title] || 0) + 1; if (tcount[g.title] > 1) g.title += ' (' + tcount[g.title] + ')'; } });
     groups.forEach(function (g) { found.push({ el: g.el, s: groupSection(g) }); });
     // embedded videos and podcasts
     var vframes = A(root.querySelectorAll('iframe[src*="youtube"], iframe[data-src*="youtube"], iframe[src*="vimeo"], video')).filter(function (f) { return !groups.some(function (g) { return g.el.contains(f); }); });
