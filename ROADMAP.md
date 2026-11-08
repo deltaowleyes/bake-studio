@@ -1,8 +1,8 @@
 # BAKE PRO roadmap
 
-Every idea for BAKE Studio, in one list. These are possible avenues, not a to-do list. The list itself lives in `ROADMAP.json` (edit that file and the BAKE PRO buttons update too); this page is made from it by `node studio/scripts/roadmap.mjs`. Business plan: `VISION.md`. Updated 2026-11-07. 68 tasks.
+Every idea for BAKE Studio, in one list. These are possible avenues, not a to-do list. The list itself lives in `ROADMAP.json` (edit that file and the BAKE PRO buttons update too); this page is made from it by `node studio/scripts/roadmap.mjs`. Business plan: `VISION.md`. Updated 2026-11-07. 67 tasks.
 
-**Already done:** Drag-and-drop sections (Step 3); Inspector sidebar (Step 3); Google Fonts; Image editor with crop and border/frame controls; Versions: EXPRESS, IndigiHub and BAKER preview the live page with View code; PRO previews screenshots; Page files and clickable screenshot pages (lib/site.js).
+**Already done:** Drag-and-drop sections (Step 3); Inspector sidebar (Step 3); Google Fonts; Image editor with crop and border/frame controls; Versions: EXPRESS, IndigiHub and BAKER preview the live page with View code; PRO previews screenshots; Page files and clickable screenshot pages (lib/site.js); Studio moved to bakeaweb.com.
 
 **Top picks** are marked ★. **Plan first** means Claude shows a plan and costs and waits for an OK before building.
 
@@ -13,7 +13,6 @@ Every idea for BAKE Studio, in one list. These are possible avenues, not a to-do
 | ★ | **Automatic testing robot**<br>A robot clicks through everything on every change. Essential once real money is involved. | Quality | Medium | — |
 | ★ | **Undo, redo and history**<br>The safety net every pro editor has. Nobody fears experimenting. | Editing | Quick | — |
 | ★ | **Free hosting live on bakedby.me, bakedbya.pro and indigihub.cloud**<br>Each free domain gets its home page and a working example site, so the hosting is real before accounts arrive. | Publishing | Quick | DNS at Porkbun for all 4 domains, and the 3 GitHub repositories (step-by-step guide) |
-| ★ | **Move the studio to bakeaweb.com**<br>BAKE Studio's real home. The old deltaowleyes.ca/bake-studio address forwards there automatically. | Publishing | Quick | 4 A records and 1 CNAME added at Porkbun (step-by-step guide) |
 |  | **bakeaweb.com home page**<br>The front door: what BAKE is, the four versions, prices, examples and a big Start baking button. | Sharing | Medium | — |
 |  | **Edit text right on the preview**<br>Double-click a headline in the preview and type. Feels like magic. | Editing | Medium | — |
 |  | **Drag and drop for pages, cards and menu links**<br>Sections can already be dragged; this brings it to everything else. | Editing | Quick | — |
