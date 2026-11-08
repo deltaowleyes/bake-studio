@@ -1,6 +1,6 @@
 # BAKE Studio: architecture
 
-This describes BAKE Studio as it is now (November 2026, project format **v3**). It is a static web app with no server, built with **React + Vite + Tailwind CSS** and published by GitHub Pages from `deltaowleyes/bake-studio` (branch `main`, folder `/`). The source lives in `studio/`; `npm run build` writes the built site into the repo's main folder, which is what Pages serves. Live: https://deltaowleyes.ca/bake-studio/ (the repo's GitHub Pages address, https://deltaowleyes.github.io/bake-studio/, redirects there because of the custom domain).
+This describes BAKE Studio as it is now (November 2026, project format **v3**). It is a static web app with no server, built with **React + Vite + Tailwind CSS** and published by GitHub Pages from `deltaowleyes/bake-studio` (branch `main`, folder `/`). The source lives in `studio/`; `npm run build` writes the built site into the repo's main folder, which is what Pages serves. Live: https://deltaowleyes.ca/bake-studio/ (the repo's GitHub Pages address, https://deltaowleyes.github.io/bake-studio/, redirects there because of the custom domain). The studio is moving to **https://bakeaweb.com/** (see `VISION.md`); that only needs a `CNAME` file once the DNS records are set at Porkbun.
 
 ## 1. What it does
 

@@ -1,6 +1,6 @@
 # BAKE Studio
 
-A website design studio. Live: https://deltaowleyes.ca/bake-studio/
+A website design studio, and the start of BAKE: free sites on bakedby.me, IndigiHub sites on indigihub.cloud, Baker portfolios on bakedbya.pro and PRO sites on their own domains (see `VISION.md`). Live: https://deltaowleyes.ca/bake-studio/ (moving to https://bakeaweb.com/).
 
 ## The five steps
 1. **Your site**: import an existing website by its address (or paste its page code), including its other pages, every image, story and video rows, and podcasts. Or start fresh from a starter.
