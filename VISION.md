@@ -30,6 +30,13 @@ Addresses use a path (`/pagename`), not a subdomain (`pagename.bakedby.me`). A p
 
 Everyone starts free and can upgrade to PRO at any time.
 
+**How each version previews and publishes**
+- **EXPRESS and IndigiHub:** the studio shows the live page and its code. Published as real web pages.
+- **BAKER:** the studio shows the live page and its code. Portfolio pieces on bakedbya.pro are published as **screenshots only**, with every menu and link clickable, so template code isn't handed out.
+- **PRO:** the studio shows screenshots (the template code stays protected). Published as a real site on the client's own domain.
+
+**Free hosting setup (2026-11-07):** one GitHub repository per free domain (`deltaowleyes/bakedby.me`, `deltaowleyes/bakedbya.pro`, `deltaowleyes/indigihub.cloud`), each with its custom domain, and one folder per pagename (`bakedby.me/pagename/`). This needs no extra accounts and is the fastest start; the *BAKE Host* task decides when to move to Cloudflare or GitHub organizations.
+
 ## 3. Accounts
 - A client signs up with a **pagename** (like a username), a **title** and a **description**.
 - One pagename is unique across all four domains. It names the client's address, their email address and their code repository.

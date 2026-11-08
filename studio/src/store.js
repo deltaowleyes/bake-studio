@@ -8,7 +8,7 @@ export const KEY = 'bake-studio-v2';
 
 export function blank() {
   return {
-    v: 3, step: 1,
+    v: 3, step: 1, edition: 'express',   // 'express' | 'indigihub' | 'baker' | 'pro' (editions.js)
     source: { has: true, url: 'https://deltaowleyes.ca/', log: [], found: null },
     biz: { name: 'Your business', desc: '' },
     brand: { pal: Object.assign({}, Art.PALETTES[0]), palFound: null, font: 0, seed: { logo: 0, hero: 0, ill: 0 }, opts: { logo: [], hero: [], ill: [] }, pick: {}, star: {} },
@@ -35,6 +35,7 @@ export function load() {
 /* ---------- store ---------- */
 export let S = load() || blank();
 const hm = /#step-(\d)/.exec(location.hash); if (hm) S.step = Math.min(5, Math.max(1, +hm[1]));
+const em = /[?&]v=(express|indigihub|baker|pro)\b/.exec(location.search); if (em) S.edition = em[1];
 
 let rev = 0, saveT, storageFull = false;
 const subs = new Set();

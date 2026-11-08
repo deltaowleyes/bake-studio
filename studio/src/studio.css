@@ -147,3 +147,15 @@ dialog#picker::backdrop{background:rgba(0,0,0,.45)}
 /* image editor frame previews (the frame itself comes from site.css .fr rules) */
 .fprev img,.fprev svg{width:100%;height:100%;object-fit:cover;display:block}
 .cropper-container{max-height:100%}
+/* live preview (EXPRESS, IndigiHub, BAKER) */
+.livew{position:relative;overflow:hidden;margin:0 auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+.livew iframe{position:absolute;left:0;top:0;border:0;transform-origin:0 0;display:block;background:#fff}
+.code{margin-top:10px}.code summary{cursor:pointer;font-size:14px}
+.code pre{max-height:360px;overflow:auto;background:var(--soft,#f6f6f4);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:12px;white-space:pre-wrap;word-break:break-all}
+/* version picker */
+.ed{display:flex;align-items:center;gap:6px;font-size:13px}.ed select{height:32px}
+.eds{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:10px}
+.eds button{height:auto;min-height:0;display:block;text-align:left;padding:10px 12px;white-space:normal}
+.eds button[aria-pressed="true"]{outline:2px solid var(--acc);outline-offset:-1px}
+.eds b{display:block;font-size:15px}.eds span{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+.edtag{font-size:12px;font-weight:600;letter-spacing:.04em;padding:2px 8px;border-radius:999px;background:var(--acc);color:var(--onacc);vertical-align:middle;margin-left:4px}

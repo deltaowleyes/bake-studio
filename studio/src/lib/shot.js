@@ -41,7 +41,13 @@ var Shot = (function () {
       });
     });
     boxes.sort(function (a, b) { return ORDER[a.type] - ORDER[b.type]; });
-    return { width: w, height: h, boxes: boxes };
+    /* every visible link (menus, buttons, cards), so a screenshot can be made clickable (lib/site.js shotSite) */
+    var links = [];
+    Array.prototype.forEach.call(host.querySelectorAll('a[href]'), function (a) {
+      var r = rect(a), href = a.getAttribute('href'); if (!r || !href || href == '#') return;
+      links.push({ x: r.x, y: r.y, width: r.width, height: r.height, href: href, label: (a.textContent || '').trim().slice(0, 80) });
+    });
+    return { width: w, height: h, boxes: boxes, links: links };
   }
   /* html: page markup; w: viewport width; opt.maxH: crop height; opt.scale: pixel density.
      Resolves to { url (picture), w, h, full, secs, map (see measure) } */

@@ -1,6 +1,8 @@
 /* BAKE Studio: the app shell. Header with the five steps, the active step, and Back / Next. */
 import { S, commit, useStudio, isStorageFull } from './store.js';
 import { STEPS, ensureArt, ensurePages } from './edit.js';
+import { EditionMenu } from './components/EditionPicker.jsx';
+import { edition } from './editions.js';
 import Step1 from './steps/Step1.jsx';
 import Step2 from './steps/Step2.jsx';
 import Step3 from './steps/Step3.jsx';
@@ -23,7 +25,8 @@ export default function App() {
   return <>
     <header className={'top' + (insp ? ' insp-open' : '')}>
       <div className="topin">
-        <div><h1>BAKE Studio</h1><p className="mu">Build a website in five steps. Your work is saved in this browser.</p></div>
+        <div><h1>BAKE Studio <small className="edtag">{edition(S).name}</small></h1><p className="mu">Build a website in five steps. Your work is saved in this browser.</p></div>
+        <EditionMenu />
         <nav className="steps" aria-label="Steps">
           {STEPS.map((n, i) => <button key={n} aria-current={S.step == i + 1 ? 'step' : undefined} onClick={() => go(i + 1)}>{i + 1}. {n}</button>)}
         </nav>

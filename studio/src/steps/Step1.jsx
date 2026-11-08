@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { Importer } from '../lib/importer.js';
 import { Render } from '../lib/render.js';
 import { S, commit, useStudio } from '../store.js';
+import { EditionCards } from '../components/EditionPicker.jsx';
 import { applyImport, importPage, logLine, starter, ensureArt, SEC } from '../edit.js';
 
 const STATUS = { imported: '✓ Imported', waiting: 'Not imported yet', blocked: 'Blocked: paste its code', importing: 'Importing…', 'new': 'Built here' };
@@ -60,6 +61,7 @@ export default function Step1({ go }) {
   return (
     <section className="step" aria-labelledby="h1s">
       <h2 id="h1s" className="sth">1. Your site</h2>
+      <EditionCards />
       <div className="card">
         <h3>Do you already have a website?</h3>
         <div className="row" role="group" aria-label="Existing site">

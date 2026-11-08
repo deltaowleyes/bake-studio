@@ -4,9 +4,32 @@ import { Render } from '../lib/render.js';
 import { Shot } from '../lib/shot.js';
 import { S, commit, useStudio, useRev, startOver } from '../store.js';
 import { nid, SEC } from '../edit.js';
+import { edition } from '../editions.js';
 import Preview, { SizeButtons } from '../components/Preview.jsx';
 
 /* Thumbnails are made one after another (Home page, 1280 px wide, cropped to 960 px, half scale, JPEG). */
+function PublishCard() {
+  useStudio();
+  const ed = edition(S), pn = S.req.pagename || '';
+  const ok = /^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$/.test(pn);
+  const addr = S.edition == 'pro' ? 'your own domain (for example yourname.com)' : ed.host + '/' + (pn || 'yourname');
+  return (
+    <div className="card" id="pubc"><h3>Publish ({ed.name})</h3>
+      <p className="mu">{ed.blurb}</p>
+      {S.edition != 'pro' && <>
+        <label htmlFor="pname">Your page name</label>
+        <input id="pname" value={pn} placeholder="sunrise-bakery" aria-describedby="pnhelp"
+          onChange={e => commit(S => { S.req.pagename = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''); })} />
+        <p id="pnhelp" className={pn && !ok ? 'errmsg' : 'mu small'}>{pn && !ok ? 'Use 3 to 40 lowercase letters, numbers or dashes, starting and ending with a letter or number.' : 'Lowercase letters, numbers and dashes.'}</p>
+      </>}
+      <p>Your site’s address: <b>https://{addr}</b></p>
+      {S.edition == 'baker' && <p className="mu small">Portfolio pieces on bakedbya.pro are published as screenshots, with every link and menu clickable.</p>}
+      {S.edition == 'indigihub' && <p className="mu small">IndigiHub pages go live after a short review by our team.</p>}
+      <p className="mu small">One-click publishing turns on when accounts arrive. Until then, use Request development below and we’ll publish it for you.</p>
+    </div>
+  );
+}
+
 function useThumbs(ids) {
   const rev = useRev(), [urls, setUrls] = useState({}), key = ids.join(',');
   useEffect(() => {
@@ -44,8 +67,8 @@ export default function Step5() {
     if (!nm) { setMsg({ bad: true, text: 'Enter your name.' }); return document.getElementById('rname').focus(); }
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { setMsg({ bad: true, text: 'Enter a valid email address so we can reach you.' }); return document.getElementById('remail').focus(); }
     commit(S => {
-      S.req = { name: nm, email: em };
-      S.notes.unshift({ id: nid('n'), at: Date.now(), name: nm, email: em, text: nt, tpl: S.tpl.pick, status: 'Requested', summary: { sections: SEC().map(x => x.title || x.type), menu: S.menu.items.map(m => m.label) } });
+      S.req = { name: nm, email: em, pagename: S.req.pagename || '' };
+      S.notes.unshift({ id: nid('n'), at: Date.now(), name: nm, email: em, text: nt, tpl: S.tpl.pick, edition: S.edition, pagename: S.req.pagename || '', status: 'Requested', summary: { sections: SEC().map(x => x.title || x.type), menu: S.menu.items.map(m => m.label) } });
     });
     setNote(''); setMsg({ bad: false, text: 'Request saved. We’ll be in touch at ' + em + '.' });
   }
@@ -98,6 +121,8 @@ export default function Step5() {
         <SizeButtons k="tvp" onPick={v => commit(S => { S.ui.tvp = v; })} />
         <Preview vp={S.ui.tvp} opt={{ tpl: vt.id, pageId: S.ui.tpage }} />
       </div>
+
+      <PublishCard />
 
       <div className="card" id="reqc"><h3>Request development</h3>
         <p className="mu">Happy with your choices? Send them to us and we’ll build your site. Add anything you’d like changed.</p>

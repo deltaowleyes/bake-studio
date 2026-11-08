@@ -1,8 +1,8 @@
 # BAKE PRO roadmap
 
-Every idea for BAKE Studio, in one list. These are possible avenues, not a to-do list. The list itself lives in `ROADMAP.json` (edit that file and the BAKE PRO buttons update too); this page is made from it by `node studio/scripts/roadmap.mjs`. Business plan: `VISION.md`. Updated 2026-11-07. 67 tasks.
+Every idea for BAKE Studio, in one list. These are possible avenues, not a to-do list. The list itself lives in `ROADMAP.json` (edit that file and the BAKE PRO buttons update too); this page is made from it by `node studio/scripts/roadmap.mjs`. Business plan: `VISION.md`. Updated 2026-11-07. 68 tasks.
 
-**Already done:** Drag-and-drop sections (Step 3); Inspector sidebar (Step 3); Google Fonts; Image editor with crop and border/frame controls.
+**Already done:** Drag-and-drop sections (Step 3); Inspector sidebar (Step 3); Google Fonts; Image editor with crop and border/frame controls; Versions: EXPRESS, IndigiHub and BAKER preview the live page with View code; PRO previews screenshots; Page files and clickable screenshot pages (lib/site.js).
 
 **Top picks** are marked ★. **Plan first** means Claude shows a plan and costs and waits for an OK before building.
 
@@ -12,6 +12,7 @@ Every idea for BAKE Studio, in one list. These are possible avenues, not a to-do
 |---|---|---|---|---|
 | ★ | **Automatic testing robot**<br>A robot clicks through everything on every change. Essential once real money is involved. | Quality | Medium | — |
 | ★ | **Undo, redo and history**<br>The safety net every pro editor has. Nobody fears experimenting. | Editing | Quick | — |
+| ★ | **Free hosting live on bakedby.me, bakedbya.pro and indigihub.cloud**<br>Each free domain gets its home page and a working example site, so the hosting is real before accounts arrive. | Publishing | Quick | DNS at Porkbun for all 4 domains, and the 3 GitHub repositories (step-by-step guide) |
 | ★ | **Move the studio to bakeaweb.com**<br>BAKE Studio's real home. The old deltaowleyes.ca/bake-studio address forwards there automatically. | Publishing | Quick | 4 A records and 1 CNAME added at Porkbun (step-by-step guide) |
 |  | **bakeaweb.com home page**<br>The front door: what BAKE is, the four versions, prices, examples and a big Start baking button. | Sharing | Medium | — |
 |  | **Edit text right on the preview**<br>Double-click a headline in the preview and type. Feels like magic. | Editing | Medium | — |
@@ -37,12 +38,12 @@ Every idea for BAKE Studio, in one list. These are possible avenues, not a to-do
 | | Task | Area | Size | You'll need |
 |---|---|---|---|---|
 | ★ | **Pagename accounts** (plan first)<br>Sign up with a pagename, title and description. One pagename works across bakedby.me, indigihub.cloud and bakedbya.pro, and names the client's email and repository. | Accounts | Big | A free Supabase account |
-|  | **Choose your version: EXPRESS, IndigiHub, BAKER or PRO**<br>One studio, four versions. Everyone starts free and can upgrade to PRO at any time. | Accounts | Medium | Accounts first |
+|  | **Choose your version: EXPRESS, IndigiHub, BAKER or PRO**<br>The version picker is in the studio now. Next: tie the version to the account, show which features are PRO, and add Upgrade to PRO. | Accounts | Medium | Accounts first |
 |  | **Pagename email addresses** (plan first)<br>pagename@bakedby.me (or another BAKE domain) for every client, without sharing a Gmail password. | Accounts | Medium | Email forwarding set up on one of our Porkbun domains |
 |  | **A repository for every pagename** (plan first)<br>Each page gets its own GitHub repository in a BAKE organization, created automatically. | Accounts | Medium | A GitHub organization per hosting domain and a GitHub App |
-| ★ | **Turn designs into real websites**<br>The engine behind every publish: the chosen template becomes a fast, real, standalone site. | Publishing | Big | — |
+| ★ | **Turn designs into real websites**<br>The engine behind every publish. Real page files already work (lib/site.js); next come image files, a favicon, a sitemap and testing on every template. | Publishing | Big | — |
 | ★ | **BAKE Host: where every site lives** (plan first)<br>Decide now how thousands of free sites are hosted safely, before GitHub's rules or limits become a problem. | Publishing | Medium | Possibly a free Cloudflare account |
-| ★ | **Free EXPRESS publish to bakedby.me/pagename** (plan first)<br>Anyone can put their site online free at bakedby.me/pagename in one click, with a small Baked with BAKE badge that brings in new visitors. | Publishing | Big | BAKE Host decided; the bakedbyme GitHub organization |
+| ★ | **Free EXPRESS publish to bakedby.me/pagename** (plan first)<br>Anyone can put their site online free at bakedby.me/pagename in one click, with a small Baked with BAKE badge that brings in new visitors. | Publishing | Big | Accounts first (so a server function can publish safely) |
 | ★ | **PRO upgrade and publish fee** (plan first)<br>The first way to earn: a one-time PRO fee of $25 to $500 depending on the template. | Publishing | Medium | A Stripe account |
 | ★ | **IndigiHub free pages** (plan first)<br>Free sites for Indigenous people, businesses and communities on indigihub.cloud, with a respectful, trusted review. | Accounts | Medium | Indigenous advisors to shape the rules |
 | ★ | **Names and trademarks check** (plan first)<br>An IndigiHub already exists in Canada; check every BAKE name before it's on thousands of sites. | Operations | Quick | A trademark lawyer for the final answer |
@@ -56,7 +57,7 @@ Every idea for BAKE Studio, in one list. These are possible avenues, not a to-do
 |---|---|---|---|---|
 |  | **New domain through Porkbun** (plan first)<br>PRO: for $50 more, search, buy and connect a brand-new domain in one flow. | Publishing | Medium | A Porkbun account with API access and prepaid credit |
 |  | **Connect an existing domain** (plan first)<br>PRO: for $100 more, a guided, checked setup, with an admin by screen-share as backup. | Publishing | Medium | — |
-|  | **BAKER portfolio sites on bakedbya.pro**<br>Every Baker gets bakedbya.pro/bakername to show their best work, built in BAKE Studio. | Accounts | Medium | Accounts and BAKE Host |
+|  | **BAKER portfolio sites on bakedbya.pro**<br>Every Baker gets bakedbya.pro/bakername: screenshots of their best work, with every menu and link clickable. | Accounts | Medium | Accounts and BAKE Host |
 |  | **Domain renewals for PRO** (plan first)<br>Domains cost money every year. A one-time PRO fee can't cover that forever, so no client ever loses their domain by surprise. | Payments | Quick | Porkbun prepaid credit; Stripe |
 |  | **Updates and rollback after launch**<br>Clients keep editing and republish anytime, and can undo a bad publish. | Publishing | Quick | — |
 |  | **Import any website** (plan first)<br>Fixes most sites blocking imports, and blocked images in screenshots. | Studio | Medium | Supabase |

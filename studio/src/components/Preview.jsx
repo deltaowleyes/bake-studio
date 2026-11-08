@@ -1,6 +1,9 @@
-/* Preview: full-page screenshots of the generated site (never live page code), plus optional
-   see-through click targets placed from Shot's box map (ARCHITECTURE.md §5.1). */
+/* Preview: PRO shows full-page screenshots of the generated site, plus optional see-through click
+   targets placed from Shot's box map (ARCHITECTURE.md §5.1). EXPRESS, IndigiHub and BAKER show the
+   real page live in a frame (LivePreview.jsx), with the same click-to-edit and a View code panel. */
 import { useEffect, useState } from 'react';
+import { livePreview } from '../editions.js';
+import LivePreview from './LivePreview.jsx';
 import { Render } from '../lib/render.js';
 import { Shot } from '../lib/shot.js';
 import { S, useStudio } from '../store.js';
@@ -10,7 +13,7 @@ export function fieldDef(b) {
   const list = b.sectionType == 'footer' ? FOOTER_F : b.itemIndex != null ? ITEMF[b.sectionType] || [] : FIELDS[b.sectionType] || [];
   return list.filter(f => f[0] == b.field)[0];
 }
-function partName(b) {
+export function partName(b) {
   if (b.type == 'section') return b.sectionType == 'footer' ? 'Footer' : Render.SECTION_TYPES[b.sectionType] || 'Section';
   if (b.type == 'item') return 'Item ' + (b.itemIndex + 1);
   const f = fieldDef(b);
@@ -38,7 +41,12 @@ function Overlays({ map, onPart }) {
 }
 
 /** vp: 'desktop' | 'tablet' | 'phone' | 'all'. opt: { tpl, pageId, sel, openMenu }. onPart: makes boxes clickable. */
-export default function Preview({ vp, opt = {}, onPart, hint = '' }) {
+export default function Preview(props) {
+  useStudio();
+  return livePreview(S) ? <LivePreview {...props} /> : <ShotPreview {...props} />;
+}
+
+function ShotPreview({ vp, opt = {}, onPart, hint = '' }) {
   useStudio();
   const html = Render.page(S, opt.tpl || S.tpl.pick || 'news-a', { pageId: opt.pageId || S.ui.page, sel: opt.sel, openMenu: opt.openMenu });
   const [shots, setShots] = useState(null), [busy, setBusy] = useState(true), [err, setErr] = useState('');
